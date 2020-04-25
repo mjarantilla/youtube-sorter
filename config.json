@@ -1,0 +1,43 @@
+{
+  "SCOPES": ["https://www.googleapis.com/auth/youtube"],
+  "API_SERVICE_NAME": "youtube",
+  "API_VERSION": "v3",
+  "YOUTUBE_DATE_FORMAT": "%Y-%m-%dT%H:%M:%S",
+  "LOG_DATE_FORMAT": "%Y%m%d%H%M%S",
+  "DATE_FORMAT": "%Y-%m-%d",
+  "DAYS_TO_SEARCH": 30,
+
+  "CLIENT_SECRETS_FILE": "secrets_web.json",
+  "RECORDS_FILE": "records.json",
+  "RANKS_FILE": "ranks.json",
+  "SUBSCRIPTIONS_FILE": "subscriptions.json",
+  "PRIVATE_VIDEOS_FILE": "private.json",
+  "TRANSFER_FILE": "transfer.json",
+
+  "AUTOLIST_MAX_LENGTH": 50,
+  "WATCH_LATER_ID": "PL8wvcc8NSIHJaQD2nSAe_hbCwrQbxwQKt",
+  "XL_WATCH_LATER_ID": "PL8wvcc8NSIHLaAwrtUX7Nm5nbE9Fltsh9",
+  "BACKLOG_ID": "PL8wvcc8NSIHIHFbnOfyXxHo2Q3UnlSpa4",
+  "F1_PLAYLIST_ID": "PL8wvcc8NSIHJ4siN2D9MoEOjDsWh8Z8kY",
+  "QUEUE_ID": "PL8wvcc8NSIHJiNBr0YrBolV9hWJTVVjOA",
+  "SECONDARY_ID": "PL8wvcc8NSIHJGfdGuQ_PAZ1RSXOJh3z9i",
+  "VIDEO_MAX_DURATION": {
+    "MINUTES": 30,
+    "HOURS": 1
+  },
+  "LAST_TIER": "5",
+  "SEARCH_INTERVAL": 60,
+  "SORT_TIMES": [],
+  "TEST_MODE": false,
+  "TIER_PLAYLISTS": {
+    "0": "PL8wvcc8NSIHJGfdGuQ_PAZ1RSXOJh3z9i",
+    "1": "PL8wvcc8NSIHJ1ieMdngUQP00mJn6wihzp",
+    "2": "PL8wvcc8NSIHLqoYTeY2A85ZorbNno9dHe",
+    "3": "PL8wvcc8NSIHJYcdft4O8g1QgFZCWIPC8V",
+    "4": "PL8wvcc8NSIHK7w6jE6KS4TodnYRDflPWa",
+    "5": "PL8wvcc8NSIHIyPAu_LNJVLXHlnzWnhb1F",
+    "6": "PL8wvcc8NSIHIW_eL_ovkfFce1HkIQHhqo"
+  },
+  "FILLER_LENGTH": 10,
+  "FILLER_INDEX": "2"
+}
