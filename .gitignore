@@ -1,3 +1,5 @@
 *credentials.json*
 *key.json*
 *token.pickle*
+*_pycache_*
+python
