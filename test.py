@@ -1,34 +1,32 @@
-"""
-Shows basic usage of the Apps Script API.
-Call the Apps Script API to create a new script project, upload a file to the
-project, and log the script's URL to the user.
-"""
-import pickle
+import os
 import os.path
-from googleapiclient import errors
-from googleapiclient.discovery import build
+import pickle
+import google_auth_oauthlib.flow
+import googleapiclient.discovery
+import googleapiclient.errors
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-# If modifying these scopes, delete the file token.pickle.
-SCOPES = ['https://www.googleapis.com/auth/script.projects']
-
-SAMPLE_CODE = '''
-function helloWorld() {
-  console.log("Hello, world!");
-}
-'''.strip()
-
-SAMPLE_MANIFEST = '''
-{
-  "timeZone": "America/New_York",
-  "exceptionLogging": "CLOUD"
-}
-'''.strip()
+SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
 def main():
-    """Calls the Apps Script API.
-    """
+    get_client()
+    return None
+
+
+def get_client():
+    # Disable OAuthlib's HTTPS verification when running locally.
+    # *DO NOT* leave this option enabled in production.
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+
+    api_service_name = "youtube"
+    api_version = "v3"
+    client_secrets_file = "credentials.json"
+
+    # Get credentials and create an API client
+    flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+        client_secrets_file, SCOPES)
+    # credentials = flow.run_console()
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -48,34 +46,17 @@ def main():
         with open('token.pickle', 'wb') as token:
             pickle.dump(creds, token)
 
-    service = build('script', 'v1', credentials=creds)
+    youtube = googleapiclient.discovery.build(
+        api_service_name, api_version, credentials=creds)
 
-    # Call the Apps Script API
-    try:
-        # Create a new project
-        request = {'title': 'My Script'}
-        response = service.projects().create(body=request).execute()
+    request = youtube.channels().list(
+        part="snippet,contentDetails,statistics",
+        id="UC_x5XG1OV2P6uZZ5FSM9Ttw"
+    )
+    response = request.execute()
 
-        # Upload two files to the project
-        request = {
-            'files': [{
-                'name': 'hello',
-                'type': 'SERVER_JS',
-                'source': SAMPLE_CODE
-            }, {
-                'name': 'appsscript',
-                'type': 'JSON',
-                'source': SAMPLE_MANIFEST
-            }]
-        }
-        response = service.projects().updateContent(
-            body=request,
-            scriptId=response['scriptId']).execute()
-        print('https://script.google.com/d/' + response['scriptId'] + '/edit')
-    except errors.HttpError as error:
-        # The API encountered a problem.
-        print(error.content)
+    print(response)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
