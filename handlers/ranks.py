@@ -53,5 +53,5 @@ class Autolister:
         self.filtered_channels = ranks_dictionary['filters']['channels']
         self.filtered_video_titles = ranks_dictionary['filters']['videos']
 
-    def define_ranks(self):
-        for rank_block in self.ranks:
+    # def define_ranks(self):
+    #     for rank_block in self.ranks:
