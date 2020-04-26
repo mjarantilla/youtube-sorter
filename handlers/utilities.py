@@ -39,7 +39,7 @@ class Logger:
         self.config = ConfigHandler()
         self.silent = silent
         self.file = self.config.log_filepath
-        self.format = self.config.variables['YOUTUBE_DATE_FORMAT']
+        self.format = self.config.variables['EVENT_LOG_FORMAT']
 
     def initialize(self):
         fp = open(self.file, mode='w')
