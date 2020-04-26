@@ -1,7 +1,8 @@
-from handlers import youtube
+from handlers import client
+
 
 def main():
-    handler = youtube.YoutubeClientHandler()
+    handler = client.YoutubeClientHandler()
 
     request = handler.client.channels().list(
         part="snippet,contentDetails,statistics",
