@@ -6,7 +6,7 @@ from os import path
 
 
 class ConfigHandler:
-    def __init__(self, cwd='../', config_file="config.json"):
+    def __init__(self, cwd=None, config_file="config.json"):
         self.home = os.getcwd() if cwd is None else cwd
         self.variables = None
         self.config_file = os.path.join(self.home, config_file)

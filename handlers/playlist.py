@@ -114,16 +114,10 @@ class SubscribedChannel:
         )
 
         response = youtube.execute(request)
-        latest_found = False
-        next_page_token = response['nextPageToken'] if 'nextPageToken' in response else None
-        while not latest_found:
-            for item in response['items']:
-                if item['contentDetails']['videoId'] != self.latest_video_id:
-                    self.newest.append(item)
-                else:
-                    latest_found = True
 
-        return response
+        tmp_results = response['items']
+
+        return tmp_results
 
     # def get_complete(self):
 
