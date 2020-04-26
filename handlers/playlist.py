@@ -56,6 +56,14 @@ class Records:
         self.date = datetime.now().strftime(config.variables['DATE_FORMAT'])
         self.filepath = config.records_filepath
         self.data = json.load(open(self.filepath, mode='r'))
+        if 'dates' not in self.data:
+            self.data['dates'] = {
+                'previously_added': {}
+            }
+        if 'latest' not in self.data:
+            self.data['latest'] = {}
+        self.videos_added = self.data['dates']
+        self.latest_videos = self.data['latest']
         utilities.print_json(self.data)
 
     def write_records(self):
@@ -64,16 +72,28 @@ class Records:
         utilities.print_json(self.data, fp=fp)
         fp.close()
 
-    def add_record(self, vid_data):
+    def update_latest(self, vid_data):
         record = {
-            'videoId': vid_data['contentDetails']['videoId'],
-            'videoPublishedAt': vid_data['contentDetails']['videoPublishedAt'],
+            'videoId': vid_data['snippet']['resourceId']['videoId'],
+            'PublishedAt': vid_data['snippet']['publishedAt'],
             'channelId': vid_data['snippet']['channelId'],
             'channelTitle': vid_data['snippet']['channelTitle'],
             'title': vid_data['snippet']['title']
         }
 
-        self.data[self.date][record['video_id']] = record
+        self.latest_videos[record['channelId']] = record['videoId']
+        self.write_records()
+
+    def add_record(self, vid_data):
+        record = {
+            'videoId': vid_data['snippet']['resourceId']['videoId'],
+            'PublishedAt': vid_data['snippet']['publishedAt'],
+            'channelId': vid_data['snippet']['channelId'],
+            'channelTitle': vid_data['snippet']['channelTitle'],
+            'title': vid_data['snippet']['title']
+        }
+
+        self.videos_added[self.date][record['video_id']] = record
         self.write_records()
 
 
@@ -90,29 +110,33 @@ class SubscribedChannel:
 
         request = youtube.client.playlistItems().list(
             part="snippet,contentDetails",
-            maxResults=1,
+            maxResults=50,
             playlistId=self.playlist_id
         )
         response = youtube.execute(request)
 
-        for item in response['items']:
-            return item['contentDetails']['videoId']
+        items = sorted(response['items'], reverse=True, key=lambda x: x['snippet']['publishedAt'])
+        records = Records()
+        records.update_latest(items[0])
 
     def get_latest(self):
         utilities.Logger().write("Getting latest videos")
         youtube = client.YoutubeClientHandler()
 
         request = youtube.client.playlistItems().list(
-            part="snippet,contentDetails",
+            part="snippet",
             maxResults=50,
             playlistId=self.playlist_id
         )
 
         response = youtube.execute(request)
 
-        tmp_results = response['items']
+        items = sorted(response['items'], reverse=True, key=lambda x: x['snippet']['publishedAt'])
 
-        return tmp_results
+        found_latest = False
+        # for item in items:
+
+        return items
 
     # def get_complete(self):
 
