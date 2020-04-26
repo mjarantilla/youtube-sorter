@@ -40,7 +40,7 @@ class Logger:
         self.initialize()
 
     def initialize(self):
-        fp = open(self.fp, mode='w')
+        fp = open(self.file, mode='w')
         fp.close()
         message = LogMessage(
             msg="Starting new logfile",
