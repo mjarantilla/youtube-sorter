@@ -1,4 +1,4 @@
-from modules import youtube
+from handlers import youtube
 
 def main():
     handler = youtube.YoutubeClientHandler()

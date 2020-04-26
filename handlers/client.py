@@ -4,18 +4,18 @@ import pickle
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
-from modules.utilities import ConfigVariables
+from handlers.utilities import ConfigHandler
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
 
 class YoutubeClientHandler:
     def __init__(self):
-        self.config = ConfigVariables()
+        self.config = ConfigHandler()
         self.client = self.get_client()
 
     def refresh_vars(self):
-        self.config = ConfigVariables()
+        self.config = ConfigHandler()
 
     def get_client(self):
         scopes = self.config.variables['SCOPES']
