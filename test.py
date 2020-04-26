@@ -9,6 +9,7 @@ from google.auth.transport.requests import Request
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.readonly"]
 
+
 def main():
     get_client()
     return None
