@@ -4,9 +4,19 @@ import pickle
 import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
-from handlers.utilities import ConfigHandler
+from handlers.utilities import ConfigHandler, print_json
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+
+def login():
+    config = ConfigHandler()
+    scopes = config.variables['SCOPES']
+    client_secrets_file = config.secrets_filepath
+    flow = InstalledAppFlow.from_client_secrets_file(
+        client_secrets_file, scopes)
+    creds = flow.run_local_server(port=0)
+    with open('token.pickle', 'wb') as token:
+        pickle.dump(creds, token)
 
 
 class YoutubeClientHandler:
@@ -26,8 +36,8 @@ class YoutubeClientHandler:
         client_secrets_file = self.config.secrets_filepath
 
         # Get credentials and create an API client
-        flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-            client_secrets_file, scopes)
+        # flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
+        #     client_secrets_file, scopes)
         # credentials = flow.run_console()
         creds = None
         # The file token.pickle stores the user's access and refresh tokens, and is
@@ -51,4 +61,30 @@ class YoutubeClientHandler:
         youtube = googleapiclient.discovery.build(
             api_service_name, api_version, credentials=creds)
 
+        request = youtube.playlistItems().list(
+            part="snippet,contentDetails",
+            maxResults=25,
+            playlistId="PLBCF2DAC6FFB574DE"
+        )
+        response = request.execute()
+
+        print_json(response)
         return youtube
+
+    def execute(self, request_object):
+        response = request_object.execute()
+
+        return response
+
+youtube = YoutubeClientHandler()
+
+client = youtube.get_client()
+#
+# request = client.playlistItems().list(
+#         part="snippet,contentDetails",
+#         maxResults=25,
+#         playlistId="PLBCF2DAC6FFB574DE"
+#     )
+#
+# response = request.execute()
+# print_json(response)

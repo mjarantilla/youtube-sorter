@@ -6,14 +6,14 @@ from os import path
 
 
 class ConfigHandler:
-    def __init__(self, config_file="config.json"):
+    def __init__(self, cwd='../', config_file="../config.json"):
         self.variables = None
         self.config_file = config_file
         self.read_config_file(config_file)
         self.current_date = datetime.now().strftime(self.variables['DATE_FORMAT'])
 
         # Paths and directories
-        self.home = os.getcwd()
+        self.home = os.getcwd() if cwd is None else cwd
         self.log_path = path.join(self.home, 'logs')
         self.secrets_filepath = path.join(self.home, self.variables['CLIENT_SECRETS_FILE'])
         self.records_filepath = path.join(self.home, self.variables['RECORDS_FILE'])
@@ -29,6 +29,9 @@ class ConfigHandler:
         config_fp = open(config_file)
         self.variables = json.load(config_fp)
         config_fp.close()
+
+    def print_config_file(self):
+        print_json(self.variables)
 
 
 class Logger:
@@ -133,4 +136,3 @@ def log(msg, silent=False):
     except:
         print_json(msg)
         raise
-
