@@ -2,7 +2,7 @@
   "SCOPES": ["https://www.googleapis.com/auth/youtube"],
   "API_SERVICE_NAME": "youtube",
   "API_VERSION": "v3",
-  "YOUTUBE_DATE_FORMAT": "%Y-%m-%dT%H:%M:%S",
+  "YOUTUBE_DATE_FORMAT": "%Y-%m-%d %H:%M:%S",
   "LOG_DATE_FORMAT": "%Y%m%d%H%M%S",
   "DATE_FORMAT": "%Y-%m-%d",
   "DAYS_TO_SEARCH": 30,
@@ -30,13 +30,13 @@
   "SORT_TIMES": [],
   "TEST_MODE": false,
   "TIER_PLAYLISTS": {
-    "0": "PL8wvcc8NSIHJGfdGuQ_PAZ1RSXOJh3z9i",
-    "1": "PL8wvcc8NSIHJ1ieMdngUQP00mJn6wihzp",
-    "2": "PL8wvcc8NSIHLqoYTeY2A85ZorbNno9dHe",
-    "3": "PL8wvcc8NSIHJYcdft4O8g1QgFZCWIPC8V",
-    "4": "PL8wvcc8NSIHK7w6jE6KS4TodnYRDflPWa",
-    "5": "PL8wvcc8NSIHIyPAu_LNJVLXHlnzWnhb1F",
-    "6": "PL8wvcc8NSIHIW_eL_ovkfFce1HkIQHhqo"
+    "0": "PL8wvcc8NSIHJQRIlBOt5IpzFmNRnAjl8q",
+    "1": "PL8wvcc8NSIHJRMpZbtgR2fA2ytFtlJbuW",
+    "2": "PL8wvcc8NSIHI2k8ZUsPGNFIyWv7hfZ-lu",
+    "3": "PL8wvcc8NSIHKfdL24NQKyNRQpBh6aS9DJ",
+    "4": "PL8wvcc8NSIHJIyWSxsYKbqMre8U0AbXW9",
+    "5": "PL8wvcc8NSIHJ8x87Q1c-8HERzLZHVe57s",
+    "6": "PL8wvcc8NSIHKevccqW-z5OH-ks-K2dDp7"
   },
   "FILLER_LENGTH": 10,
   "FILLER_INDEX": "2"
