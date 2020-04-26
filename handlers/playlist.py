@@ -1,5 +1,6 @@
 from handlers import client, utilities
 import json
+from datetime import datetime
 
 class YoutubePlaylist:
     def __init__(self, **kwargs):
@@ -52,6 +53,7 @@ class YoutubePlaylist:
 class Records:
     def __init__(self):
         config = utilities.ConfigHandler()
+        self.date = datetime.now().strftime(config.variables['DATE_FORMAT'])
         self.filepath = config.records_filepath
         self.data = json.load(open(self.filepath, mode='r'))
         utilities.print_json(self.data)
@@ -61,6 +63,18 @@ class Records:
         fp = open(self.filepath, mode='w')
         utilities.print_json(self.data, fp=fp)
         fp.close()
+
+    def add_record(self, vid_data):
+        record = {
+            'videoId': vid_data['contentDetails']['videoId'],
+            'videoPublishedAt': vid_data['contentDetails']['videoPublishedAt'],
+            'channelId': vid_data['snippet']['channelId'],
+            'channelTitle': vid_data['snippet']['channelTitle'],
+            'title': vid_data['snippet']['title']
+        }
+
+        self.data[self.date][record['video_id']] = record
+        self.write_records()
 
 
 class SubscribedChannel:
@@ -100,29 +114,16 @@ class SubscribedChannel:
         )
 
         response = youtube.execute(request)
-        # latest_found = False
-        # next_page_token = response['nextPageToken'] if 'nextPageToken' in response else None
-        # while not latest_found:
-        #     for item in response['items']:
-        #         if item['contentDetails']['videoId'] != self.latest_video_id:
-        #             self.newest.append(item)
-        #         else:
-        #             latest_found = True
-        #
-        # utilities.print_json(self.get_last())
+        latest_found = False
+        next_page_token = response['nextPageToken'] if 'nextPageToken' in response else None
+        while not latest_found:
+            for item in response['items']:
+                if item['contentDetails']['videoId'] != self.latest_video_id:
+                    self.newest.append(item)
+                else:
+                    latest_found = True
 
-        return results
+        return response
 
     # def get_complete(self):
 
-kwargs = {
-    'playlist_id': 'UUiDJtJKMICpb9B1qf7qjEOA',
-    'channel_id': 'UCiDJtJKMICpb9B1qf7qjEOA'
-}
-test_playlist = SubscribedChannel(**kwargs)
-response = test_playlist.get_latest()
-for item in response:
-    print(item['snippet']['title'])
-# input()
-# for item in response['items']:
-#     print(item['snippet']['position'], item['snippet']['title'], item['snippet']['publishedAt'], sep="\t")
