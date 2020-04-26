@@ -83,11 +83,6 @@ class SubscribedChannel:
         self.playlist_id = kwargs['playlist_id']
         self.channel_id = kwargs['channel_id']
         config = utilities.ConfigHandler()
-        records = Records()
-        if self.channel_id not in records.data:
-            records.data[self.channel_id] = self.get_last()
-            records.write_records()
-        self.latest_video_id = records.data[self.channel_id]
 
     def get_last(self):
         utilities.Logger().write("Getting most recently uploaded video")
