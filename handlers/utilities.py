@@ -5,7 +5,7 @@ import os
 from os import path
 
 
-class ConfigVariables:
+class ConfigHandler:
     def __init__(self, config_file="config.json"):
         self.variables = None
         self.config_file = config_file
@@ -31,6 +31,61 @@ class ConfigVariables:
         config_fp.close()
 
 
+class Logger:
+    def __init__(self, silent=False):
+        self.config = ConfigHandler()
+        self.silent = silent
+        self.file = self.config.variables['LOG_FILE']
+        self.format = self.config.variables['YOUTUBE_DATE_FORMAT']
+        self.initialize()
+
+    def initialize(self):
+        fp = open(self.fp, mode='w')
+        fp.close()
+        message = LogMessage(
+            msg="Starting new logfile",
+            event_time_format=self.format,
+            logfile=self.file,
+            silent=self.silent
+        )
+        message.write()
+
+    def rename(self):
+        log_date = datetime.now()
+        file_suffix_format = self.config.variables['LOG_DATE_FORMAT']
+        file_suffix = log_date.strftime(file_suffix_format)
+        if log_date.hour == 0 and log_date.minute == 0 and log_date.second == 0:
+            shutil.copyfile(self.file, ".".join([self.file,file_suffix]))
+            self.initialize()
+
+    def write(self, msg):
+        self.rename()
+        message = LogMessage(
+            msg=msg,
+            event_time_format=self.format,
+            logfile=self.file,
+            silent=self.silent
+        )
+        message.write()
+
+
+class LogMessage:
+    def __init__(self, msg, event_time_format, logfile, silent=False):
+        self.date = datetime.now()
+        self.event_time = self.date.strftime(event_time_format)
+        self.msg = msg
+        self.logfile = logfile
+        self.silent = silent
+
+    def write(self):
+        fp = open(self.logfile, mode='a')
+        print(self.msg, file=fp)
+        fp.close()
+
+        if not self.silent:
+            print(self.msg)
+
+
 def print_json(obj, fp=None):
     import json
 
@@ -42,7 +97,7 @@ def print_json(obj, fp=None):
 
 def log(msg, silent=False):
     try:
-        config = ConfigVariables()
+        config = ConfigHandler()
         log_date_format = config.variables['LOG_DATE_FORMAT']
         log_file = config.variables['LOG_FILE']
         log_date = datetime.now()
