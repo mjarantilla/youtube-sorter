@@ -40,7 +40,6 @@ class Logger:
         self.silent = silent
         self.file = self.config.log_filepath
         self.format = self.config.variables['YOUTUBE_DATE_FORMAT']
-        self.initialize()
 
     def initialize(self):
         fp = open(self.file, mode='w')
