@@ -233,10 +233,25 @@ class SubscribedChannel:
         #     else:
         #         break
 
-    def add_newest_to_queue(self):
-        legacy_records = LegacyRecords()
-        legacy_records.import_legacy(self.channel_id)
-        for vid_data in self.newest:
+
+class QueueHandler:
+    def __init__(self):
+        config = utilities.ConfigHandler()
+        self.id = config.variables['QUEUE_ID']
+        self.ranks = json.load(open(config.ranks_filepath, mode='r'))
+        self.subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))
+        self.channel_details = self.subscriptions['details']
+        self.records = Records()
+
+    def scan_all_channels(self):
+        for channel_name in self.channel_details:
+            kwargs = self.channel_details[channel_name]
+            self.scan_channel(**kwargs)
+
+    def scan_channel(self, all=False, **kwargs):
+        channel = SubscribedChannel(**kwargs)
+        channel.get_latest(all=all)
+        for vid_data in channel.newest:
             record = {
                 'videoId': vid_data['snippet']['resourceId']['videoId'],
                 'publishedAt': vid_data['snippet']['publishedAt'],
@@ -244,16 +259,16 @@ class SubscribedChannel:
                 'channelTitle': vid_data['snippet']['channelTitle'],
                 'title': vid_data['snippet']['title']
             }
-            if record['videoId'] not in self.records.channel_vids_added(self.channel_id):
-                self.add_item_to_queue(vid_data)
+            if record['videoId'] not in self.records.channel_vids_added(channel.channel_id):
+                self.add_video_to_queue(vid_data)
             else:
                 logger.write("Already previously added. Skipping: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
 
-    def add_item_to_queue(self, vid_data):
+    def add_video_to_queue(self, vid_data):
         youtube = client.YoutubeClientHandler()
         body = {
             'snippet': {
-                'playlistId': self.queue_id,
+                'playlistId': self.id,
                 'resourceId': {
                     'kind': vid_data['snippet']['resourceId']['kind'],
                     'videoId': vid_data['snippet']['resourceId']['videoId']
@@ -261,7 +276,8 @@ class SubscribedChannel:
             }
         }
         try:
-            logger.write("Adding to queue: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
+            logger.write(
+                "Adding to queue: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
             request = youtube.client.playlistItems().insert(part='snippet', body=body)
             response = youtube.execute(request)
             self.records.update_latest(vid_data)
@@ -273,21 +289,3 @@ class SubscribedChannel:
             raise
 
         return response
-
-
-class QueueHandler:
-    def __init__(self):
-        config = utilities.ConfigHandler()
-        self.id = config.variables['QUEUE_ID']
-        self.subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))
-        self.channel_details = self.subscriptions['details']
-
-    def scan_all_channels(self):
-        for channel_name in self.channel_details:
-            kwargs = self.channel_details[channel_name]
-            self.scan_channel(**kwargs)
-
-    def scan_channel(self, all=False, **kwargs):
-        channel = SubscribedChannel(**kwargs)
-        channel.get_latest(all=all)
-        channel.add_newest_to_queue()
