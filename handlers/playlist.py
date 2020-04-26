@@ -2,6 +2,7 @@ from handlers import client, utilities
 import json
 from datetime import datetime
 from handlers.utilities import Logger
+import googleapiclient.errors
 
 logger = Logger()
 
@@ -71,10 +72,18 @@ class Records:
         self.latest_videos = self.data['latest']
 
     def write_records(self):
-        utilities.Logger().write("Writing records.json")
         fp = open(self.filepath, mode='w')
         utilities.print_json(self.data, fp=fp)
         fp.close()
+
+    def channel_vids_added(self, channel_id):
+        channel_video_ids = {}
+        for date in self.videos_added:
+            if channel_id in self.videos_added[date]:
+                for vid_id in self.videos_added[date][channel_id]:
+                    channel_video_ids[vid_id] = self.videos_added[date][channel_id][vid_id]
+
+        return channel_video_ids
 
     def update_latest(self, vid_data):
         record = {
@@ -110,8 +119,48 @@ class Records:
             'title': vid_data['snippet']['title']
         }
 
-        self.videos_added[self.date][record['video_id']] = record
+        if self.date not in self.videos_added:
+            self.videos_added[self.date] = {}
+        if record['channelId'] not in self.videos_added[self.date]:
+            self.videos_added[self.date][record['channelId']] = {}
+        self.videos_added[self.date][record['channelId']][record['videoId']] = record
         self.write_records()
+
+
+class LegacyRecords(Records):
+    def __init__(self):
+        super().__init__()
+        config = utilities.ConfigHandler()
+        self.legacy_filepath = config.records_filepath + ".legacy"
+        self.legacy_data = json.load(open(self.legacy_filepath, mode='r'))
+        self.videos_added = self.import_legacy()
+
+    def import_legacy(self):
+        new_json = {}
+        for date in self.legacy_data:
+            new_json[date] = {}
+            for vid_id in self.legacy_data[date]:
+                vid_data = self.legacy_data[date][vid_id]
+                channel_id = vid_data['channelId']
+                if channel_id not in new_json[date]:
+                    new_json[date][channel_id] = {
+                        vid_id: vid_data
+                    }
+        return new_json
+
+    def combine_data(self):
+        new_json = {}
+        for data_source in [self.data['dates'], self.legacy_data]:
+            for date in data_source:
+                if date not in new_json:
+                    new_json[date] = {}
+                for channel_id in data_source[date]:
+                    if channel_id not in new_json[date]:
+                        new_json[date][channel_id] = {}
+                    for vid_id in data_source[date][channel_id]:
+                        new_json[date][channel_id][vid_id] = data_source[date][channel_id][vid_id]
+
+        self.data['dates'] = new_json
 
 
 class SubscribedChannel:
@@ -119,7 +168,9 @@ class SubscribedChannel:
         self.newest = []
         self.playlist_id = kwargs['uploads']
         self.channel_id = kwargs['id']
+        self.records = Records()
         config = utilities.ConfigHandler()
+        self.queue_id = config.variables['QUEUE_ID']
 
     def get_last(self):
         utilities.Logger().write("Getting most recently uploaded video")
@@ -137,8 +188,14 @@ class SubscribedChannel:
 
     def get_latest(self, all=False):
         logger.write("Getting latest videos")
-        latest_videos = Records().latest_videos
-        last_video_recorded = latest_videos[self.channel_id] if self.channel_id in latest_videos else {}
+        latest_videos = self.records.latest_videos
+        if self.channel_id in latest_videos:
+            last_video_recorded = latest_videos[self.channel_id]
+        else:
+            last_video_recorded = {
+              "publishedAt": "2000-01-01T00:00:00.000Z",
+              "videoId": "blank"
+            }
         youtube = client.YoutubeClientHandler()
 
         request = youtube.client.playlistItems().list(
@@ -163,14 +220,74 @@ class SubscribedChannel:
                 response = youtube.execute(request)
                 items = items + response['items']
                 pages += 1
-            Records().update_latest(items[0])
         logger.write("Pages of videos: %i" % pages)
         logger.write("Videos fetched: %i" % len(items))
 
         items = sorted(items, reverse=True, key=lambda x: x['snippet']['publishedAt'])
 
+        self.newest = items
+
         # for item in items:
-        #
+        #     if self.records.is_newer(last_video_recorded['publishedAt'], item['snippet']['publishedAt']):
+        #         self.newest.append(item)
+        #     else:
+        #         break
 
-        return items
+    def add_newest_to_queue(self):
+        legacy_records = LegacyRecords()
+        legacy_records.import_legacy(self.channel_id)
+        for vid_data in self.newest:
+            record = {
+                'videoId': vid_data['snippet']['resourceId']['videoId'],
+                'publishedAt': vid_data['snippet']['publishedAt'],
+                'channelId': vid_data['snippet']['channelId'],
+                'channelTitle': vid_data['snippet']['channelTitle'],
+                'title': vid_data['snippet']['title']
+            }
+            if record['videoId'] not in self.records.channel_vids_added(self.channel_id):
+                self.add_item_to_queue(vid_data)
+            else:
+                logger.write("Already previously added. Skipping: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
 
+    def add_item_to_queue(self, vid_data):
+        youtube = client.YoutubeClientHandler()
+        body = {
+            'snippet': {
+                'playlistId': self.queue_id,
+                'resourceId': {
+                    'kind': vid_data['snippet']['resourceId']['kind'],
+                    'videoId': vid_data['snippet']['resourceId']['videoId']
+                }
+            }
+        }
+        try:
+            logger.write("Adding to queue: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
+            request = youtube.client.playlistItems().insert(part='snippet', body=body)
+            response = youtube.execute(request)
+            self.records.update_latest(vid_data)
+            self.records.add_record(vid_data)
+        except googleapiclient.errors.HttpError as e:
+            print(e.content)
+            print(e.error_details)
+            print(e.resp)
+            raise
+
+        return response
+
+
+class QueueHandler:
+    def __init__(self):
+        config = utilities.ConfigHandler()
+        self.id = config.variables['QUEUE_ID']
+        self.subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))
+        self.channel_details = self.subscriptions['details']
+
+    def scan_all_channels(self):
+        for channel_name in self.channel_details:
+            kwargs = self.channel_details[channel_name]
+            self.scan_channel(**kwargs)
+
+    def scan_channel(self, all=False, **kwargs):
+        channel = SubscribedChannel(**kwargs)
+        channel.get_latest(all=all)
+        channel.add_newest_to_queue()
