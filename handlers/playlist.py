@@ -49,32 +49,80 @@ class YoutubePlaylist:
         return None
 
 
+class Records:
+    def __init__(self):
+        config = utilities.ConfigHandler()
+        self.filepath = config.records_filepath
+        self.data = json.load(open(self.filepath, mode='r'))
+        utilities.print_json(self.data)
+
+    def write_records(self):
+        utilities.Logger().write("Writing records.json")
+        fp = open(self.filepath, mode='w')
+        utilities.print_json(self.data, fp=fp)
+        fp.close()
+
+
 class SubscribedChannel:
     def __init__(self, **kwargs):
         self.newest = []
         self.playlist_id = kwargs['playlist_id']
+        self.channel_id = kwargs['channel_id']
         config = utilities.ConfigHandler()
-        self.records = json.load(open(config.records_filepath, mode='r'))
+        records = Records()
+        if self.channel_id not in records.data:
+            records.data[self.channel_id] = self.get_last()
+            records.write_records()
+        self.latest_video_id = records.data[self.channel_id]
 
-    def get_latest(self):
+    def get_last(self):
+        utilities.Logger().write("Getting most recently uploaded video")
         youtube = client.YoutubeClientHandler()
 
-        response = youtube.client.playlistItems().list(
+        request = youtube.client.playlistItems().list(
             part="snippet,contentDetails",
-            maxResults=10,
+            maxResults=1,
+            playlistId=self.playlist_id
+        )
+        response = youtube.execute(request)
+
+        for item in response['items']:
+            return item['contentDetails']['videoId']
+
+    def get_latest(self):
+        utilities.Logger().write("Getting latest videos")
+        youtube = client.YoutubeClientHandler()
+
+        request = youtube.client.playlistItems().list(
+            part="snippet,contentDetails",
+            maxResults=50,
             playlistId=self.playlist_id
         )
 
-        response = youtube.execute(response)
+        response = youtube.execute(request)
+        # latest_found = False
+        # next_page_token = response['nextPageToken'] if 'nextPageToken' in response else None
+        # while not latest_found:
+        #     for item in response['items']:
+        #         if item['contentDetails']['videoId'] != self.latest_video_id:
+        #             self.newest.append(item)
+        #         else:
+        #             latest_found = True
+        #
+        # utilities.print_json(self.get_last())
 
-        return response
+        return results
 
     # def get_complete(self):
 
 kwargs = {
-    'playlist_id': 'UUMcVRw4Ix0g-Ek0WPyfnIWQ',
-    'channel_id': 'UCMcVRw4Ix0g-Ek0WPyfnIWQ'
+    'playlist_id': 'UUiDJtJKMICpb9B1qf7qjEOA',
+    'channel_id': 'UCiDJtJKMICpb9B1qf7qjEOA'
 }
 test_playlist = SubscribedChannel(**kwargs)
 response = test_playlist.get_latest()
-utilities.print_json(response)
+for item in response:
+    print(item['snippet']['title'])
+# input()
+# for item in response['items']:
+#     print(item['snippet']['position'], item['snippet']['title'], item['snippet']['publishedAt'], sep="\t")

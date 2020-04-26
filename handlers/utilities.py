@@ -6,14 +6,14 @@ from os import path
 
 
 class ConfigHandler:
-    def __init__(self, cwd='../', config_file="../config.json"):
+    def __init__(self, cwd='../', config_file="config.json"):
+        self.home = os.getcwd() if cwd is None else cwd
         self.variables = None
-        self.config_file = config_file
-        self.read_config_file(config_file)
+        self.config_file = os.path.join(self.home, config_file)
+        self.read_config_file(self.config_file)
         self.current_date = datetime.now().strftime(self.variables['DATE_FORMAT'])
 
         # Paths and directories
-        self.home = os.getcwd() if cwd is None else cwd
         self.log_path = path.join(self.home, 'logs')
         self.secrets_filepath = path.join(self.home, self.variables['CLIENT_SECRETS_FILE'])
         self.records_filepath = path.join(self.home, self.variables['RECORDS_FILE'])
@@ -38,7 +38,7 @@ class Logger:
     def __init__(self, silent=False):
         self.config = ConfigHandler()
         self.silent = silent
-        self.file = self.config.variables['LOG_FILE']
+        self.file = self.config.log_filepath
         self.format = self.config.variables['YOUTUBE_DATE_FORMAT']
         self.initialize()
 
@@ -82,11 +82,11 @@ class LogMessage:
 
     def write(self):
         fp = open(self.logfile, mode='a')
-        print(self.msg, file=fp)
+        print(": ".join([self.event_time, self.msg]), file=fp)
         fp.close()
 
         if not self.silent:
-            print(self.msg)
+            print(": ".join([self.event_time, self.msg]))
 
 
 def print_json(obj, fp=None):
