@@ -21,8 +21,8 @@ class YoutubeClientHandler:
         scopes = self.config.variables['SCOPES']
         os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
-        api_service_name = "youtube"
-        api_version = "v3"
+        api_service_name = self.config.variables['API_SERVICE_NAME']
+        api_version = self.config.variables['API_VERSION']
         client_secrets_file = self.config.secrets_filepath
 
         # Get credentials and create an API client
