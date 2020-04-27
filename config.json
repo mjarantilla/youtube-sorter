@@ -2,7 +2,7 @@
   "SCOPES": ["https://www.googleapis.com/auth/youtube"],
   "API_SERVICE_NAME": "youtube",
   "API_VERSION": "v3",
-  "YOUTUBE_DATE_FORMAT": "%Y-%m-%dT%H:%M:%S.%fZ",
+  "YOUTUBE_DATE_FORMAT": "%Y-%m-%dT%H:%M:%S.%f",
   "EVENT_LOG_FORMAT": "%Y-%m-%d %H:%M:%S.%f",
   "LOG_DATE_FORMAT": "%Y%m%d%H%M%S",
   "DATE_FORMAT": "%Y-%m-%d",

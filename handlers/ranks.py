@@ -57,6 +57,9 @@ class RanksHandler():
         self.data = json.load(open(config.ranks_filepath, mode='r'))
         self.ranks = self.data['ranks']
         self.filtered = self.data['filters']
+        self.filtered_channels = []
+        for channel_name in self.filtered['channels']:
+            self.filtered_channels.append(self.filtered['channels'][channel_name])
         self.playlists = self.data['playlist_ids']
         for tier in config.variables['TIER_PLAYLISTS']:
             self.playlists[tier] = config.variables['TIER_PLAYLISTS'][tier]
@@ -68,6 +71,13 @@ class RanksHandler():
                 rank_block['playlist'] = 'watch_later'
             rank = Tier(**rank_block)
             self.rank_data.append(rank)
+
+    def channel_filtered(self, channel_id):
+        if channel_id in self.filtered_channels:
+            return True
+        else:
+            return False
+
 
 class Autolister:
     def __init__(self):
