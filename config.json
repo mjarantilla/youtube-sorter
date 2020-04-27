@@ -7,6 +7,7 @@
   "LOG_DATE_FORMAT": "%Y%m%d%H%M%S",
   "DATE_FORMAT": "%Y-%m-%d",
   "DAYS_TO_SEARCH": 30,
+  "SILENT": false,
 
   "CLIENT_SECRETS_FILE": "credentials.json",
   "RECORDS_FILE": "records.json",

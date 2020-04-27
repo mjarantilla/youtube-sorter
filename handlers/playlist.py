@@ -214,8 +214,8 @@ class SubscribedChannel:
                 response = youtube.execute(request)
                 items = items + response['items']
                 pages += 1
-        logger.write("Pages of videos: %i" % pages)
-        logger.write("Videos fetched: %i" % len(items))
+            logger.write("Pages of videos: %i" % pages)
+            logger.write("Videos fetched: %i" % len(items))
 
         items = sorted(items, reverse=True, key=lambda x: x['snippet']['publishedAt'])
         for item in items:
@@ -253,18 +253,18 @@ class QueueHandler:
         self.date_format = config.variables['YOUTUBE_DATE_FORMAT']
         self.oldest_date = datetime.now() - timedelta(days=days_to_search)
 
-    def scan_all_channels(self):
+    def scan_all_channels(self, all=False):
         added_to_queue = []
         for channel_name in self.channel_details:
             kwargs = self.channel_details[channel_name]
             kwargs['name'] = channel_name
             if not self.ranks.channel_filtered(channel_id=kwargs['id']):
-                added_to_queue = added_to_queue + self.scan_channel(**kwargs)
+                added_to_queue = added_to_queue + self.scan_channel(all=all, **kwargs)
 
         if len(added_to_queue) > 0:
             logger.write("Added to queue:")
-            for vid_data in added_to_queue:
-                logger.write("\t- %s: %s" % (vid_data['channelTitle'], vid_data['title']))
+            for record in added_to_queue:
+                logger.write("\t- %s: %s" % (record['channelTitle'], record['title']))
 
     def scan_channel(self, all=False, **kwargs):
         channel = SubscribedChannel(**kwargs)
@@ -281,7 +281,7 @@ class QueueHandler:
             valid = self.vid_is_valid(record)
             if valid:
                 self.add_video_to_queue(vid_data)
-                added_to_queue.append(vid_data)
+                added_to_queue.append(record)
 
         return added_to_queue
 
