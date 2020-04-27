@@ -1,5 +1,7 @@
 #!/usr/local/bin/python3.6
 from handlers.playlist import QueueHandler, LegacyRecords
+from handlers.utilities import Logger
+import argparse
 
 
 def merge():
@@ -7,6 +9,35 @@ def merge():
     records.combine_data()
     records.write_records()
 
+flags = {
+    "all": {
+        "shorthand": "a",
+        "help": "Specify this if you need assistance formatting the JSON file for the --json|-j argument."
+    },
+    "verbose": {
+        "shorthand": "v",
+        "help": ""
+    }
+}
+
+arguments = {}
+
+parser = argparse.ArgumentParser(description='')
+
+for arg in sorted(arguments):
+    dest_var = arg
+    shorthand = arguments[arg]['shorthand']
+    help_text = arguments[arg]['help']
+    parser.add_argument('-' + shorthand, '--' + dest_var, dest=dest_var, help=help_text)
+
+for flag in sorted(flags):
+    dest_var = flag
+    shorthand = flags[flag]['shorthand']
+    help_text = flags[flag]['help']
+    parser.add_argument('-' + shorthand, '--' + dest_var, dest=dest_var, action='store_true', help=help_text)
+
+args = vars(parser.parse_args())
+
 merge()
 queue = QueueHandler()
-queue.scan_all_channels()
+queue.scan_all_channels(all=args['all'])

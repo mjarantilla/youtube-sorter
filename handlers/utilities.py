@@ -37,7 +37,7 @@ class ConfigHandler:
 class Logger:
     def __init__(self, silent=False):
         self.config = ConfigHandler()
-        self.silent = silent
+        self.silent = self.config.variables['SILENT']
         self.file = self.config.log_filepath
         self.format = self.config.variables['EVENT_LOG_FORMAT']
 
@@ -80,7 +80,7 @@ class LogMessage:
         self.silent = silent
 
     def write(self):
-        fp = open(self.logfile, mode='a')
+        fp = open(self.logfile, mode='a', encoding="utf-8")
         print(": ".join([self.event_time, self.msg]), file=fp)
         fp.close()
 
