@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3.6
 from handlers.playlist import QueueHandler, LegacyRecords
 
 
