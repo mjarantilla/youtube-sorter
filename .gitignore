@@ -5,3 +5,6 @@
 python_new
 logs/*
 test.py
+records.json
+records.json.legacy
+ranks.json
