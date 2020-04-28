@@ -6,7 +6,7 @@ from handlers import utilities
 class Tier:
     def __init__(self, **kwargs):
         self.name = kwargs['tier']
-        self.subtiers = None
+        self.subtiers = []
         self.channels = kwargs['channels'] if 'channels' in kwargs else []
         self.channel_data = []
         self.separate = kwargs['separate'] if 'separate' in kwargs and kwargs['separate'] else False
@@ -26,9 +26,6 @@ class Tier:
                 subtier_kwargs['playlist'] = self.playlist
             self.subtiers.append(Tier(**subtier_kwargs))
 
-        if len(self.subtiers) == 0:
-            self.subtiers = None
-
     def assemble_video_list(self):
         full_list = self.videos
 
@@ -44,8 +41,12 @@ class Tier:
         for channel_name in self.channels:
             self.channel_data.append(subscriptions[channel_name])
 
-    def get_videos(self):
-        self.videos = []
+    def get_channels(self):
+        channels = self.channels
+        for subtier in self.subtiers:
+            channels = channels + subtier.get_channels()
+
+        return channels
 
     def print_rank(self):
         return None
@@ -71,6 +72,8 @@ class RanksHandler():
                 rank_block['playlist'] = 'watch_later'
             rank = Tier(**rank_block)
             self.rank_data.append(rank)
+
+        return self.rank_data
 
     def channel_filtered(self, channel_id):
         if channel_id in self.filtered_channels:

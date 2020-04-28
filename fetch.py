@@ -4,8 +4,8 @@ from handlers.utilities import Logger
 import argparse
 
 
-def merge():
-    records = LegacyRecords()
+def merge(legacy_filepath):
+    records = LegacyRecords(legacy_filepath=legacy_filepath)
     records.combine_data()
     records.write_records()
 
@@ -17,10 +17,31 @@ flags = {
     "verbose": {
         "shorthand": "v",
         "help": ""
+    },
+    "f1": {
+        "shorthand": "f",
+        "help": ""
+    },
+    "primary": {
+        "shorthand": "p",
+        "help": ""
+    },
+    "secondary": {
+        "shorthand": "s",
+        "help": ""
+    },
+    "waiting": {
+        "shorthand": "w",
+        "help": ""
     }
 }
 
-arguments = {}
+arguments = {
+    "merge": {
+        "shorthand": "m",
+        "help": "Merge legacy records"
+    }
+}
 
 parser = argparse.ArgumentParser(description='')
 
@@ -37,7 +58,12 @@ for flag in sorted(flags):
     parser.add_argument('-' + shorthand, '--' + dest_var, dest=dest_var, action='store_true', help=help_text)
 
 args = vars(parser.parse_args())
-
-merge()
+if args['merge'] is not None:
+    print("Merging")
+    merge(legacy_filepath="./records.json.legacy")
+ranks = []
+for rank in ['f1', 'primary', 'secondary', 'waiting']:
+    if args[rank]:
+        ranks.append(rank)
 queue = QueueHandler()
-queue.scan_all_channels(all=args['all'])
+queue.scan_ordered_channels(ranks)
