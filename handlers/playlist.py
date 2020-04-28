@@ -85,31 +85,6 @@ class Records:
 
         return channel_video_ids
 
-    # def update_latest(self, vid_data):
-    #     record = {
-    #         'videoId': vid_data['snippet']['resourceId']['videoId'],
-    #         'publishedAt': vid_data['snippet']['publishedAt'],
-    #         'channelId': vid_data['snippet']['channelId'],
-    #         'channelTitle': vid_data['snippet']['channelTitle'],
-    #         'title': vid_data['snippet']['title']
-    #     }
-    #     current_latest = self.latest_videos[record['channelId']] if record['channelId'] in self.latest_videos else None
-    #
-    #     if self.is_newer(current_latest['publishedAt'], record['publishedAt']):
-    #         self.latest_videos[record['channelId']] = {
-    #             'videoId': record['videoId'],
-    #             'publishedAt': record['publishedAt']
-    #         }
-    #         self.write_records()
-
-    # def is_newer(self, current, newer):
-    #     tmp_current = datetime.strptime(current, self.youtube_date_format)
-    #     tmp_newer = datetime.strptime(newer, self.youtube_date_format)
-    #     if tmp_newer > tmp_current:
-    #         return True
-    #     else:
-    #         return False
-
     def add_record(self, vid_data):
         record = {
             'videoId': vid_data['snippet']['resourceId']['videoId'],
@@ -173,20 +148,6 @@ class SubscribedChannel:
         config = utilities.ConfigHandler()
         self.queue_id = config.variables['QUEUE_ID']
         self.date_format = config.variables['YOUTUBE_DATE_FORMAT']
-
-    def get_last(self):
-        utilities.Logger().write("Getting most recently uploaded video")
-        youtube = client.YoutubeClientHandler()
-
-        request = youtube.client.playlistItems().list(
-            part="snippet,contentDetails",
-            maxResults=50,
-            playlistId=self.playlist_id
-        )
-        response = youtube.execute(request)
-
-        items = sorted(response['items'], reverse=True, key=lambda x: x['snippet']['publishedAt'])
-        Records().update_latest(items[0])
 
     def get_latest(self, all=False):
         logger.write("Getting latest videos: %s" % self.name)
