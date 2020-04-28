@@ -46,6 +46,8 @@ class Tier:
         for subtier in self.subtiers:
             channels = channels + subtier.get_channels()
 
+        self.channel_data = channels
+
         return channels
 
     def print_rank(self):
