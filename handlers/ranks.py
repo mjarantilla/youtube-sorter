@@ -41,6 +41,13 @@ class Tier:
         for channel_name in self.channels:
             self.channel_data.append(subscriptions[channel_name])
 
+    def get_channels(self):
+        channels = self.channels
+        for subtier in self.subtiers:
+            channels = channels + subtier.get_channels()
+
+        return channels
+
     def print_rank(self):
         return None
 

@@ -40,4 +40,4 @@ args = vars(parser.parse_args())
 
 merge()
 queue = QueueHandler()
-queue.scan_all_channels(all=args['all'])
+queue.scan_ordered_channels(['f1', 'primary'])

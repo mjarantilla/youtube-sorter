@@ -214,13 +214,33 @@ class QueueHandler:
         self.date_format = config.variables['YOUTUBE_DATE_FORMAT']
         self.oldest_date = datetime.now() - timedelta(days=days_to_search)
 
-    def scan_all_channels(self, all=False):
+    def scan_ordered_channels(self, rank_order=None):
+        if rank_order is None:
+            rank_order = ['f1', 'primary', 'secondary']
+        channel_names = []
+        rank_data = self.ranks.define_ranks()
+        for rank in rank_order:
+            for rank_block in rank_data:
+                if rank_block.name == rank:
+                    channel_names += rank_block.get_channels()
+
+        self.scan_channels(channel_names=channel_names)
+
+    def scan_channels(self, all_videos=False, channel_names=None):
         added_to_queue = []
-        for channel_name in self.channel_details:
-            kwargs = self.channel_details[channel_name]
+        if channel_names is None:
+            channel_details = self.channel_details
+        else:
+            channel_details = {}
+            for channel_name in channel_names:
+                if channel_name in self.channel_details:
+                    channel_details[channel_name] = self.channel_details[channel_name]
+
+        for channel_name in channel_details:
+            kwargs = channel_details[channel_name]
             kwargs['name'] = channel_name
             if not self.ranks.channel_filtered(channel_id=kwargs['id']):
-                added_to_queue = added_to_queue + self.scan_channel(all=all, **kwargs)
+                added_to_queue = added_to_queue + self.scan_channel(all=all_videos, **kwargs)
 
         if len(added_to_queue) > 0:
             logger.write("Added to queue:")
