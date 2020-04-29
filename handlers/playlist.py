@@ -267,8 +267,9 @@ class QueueHandler:
 
         if len(added_to_queue) > 0:
             logger.write("Added to queue:")
-            for record in added_to_queue:
-                logger.write("\t- %s: %s" % (record['channelTitle'], record['title']))
+            for vid_data in added_to_queue:
+                logger.write("\t- %s: %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
+                self.records.add_record(vid_data)
 
     def scan_channel(self, all=False, **kwargs):
         channel = SubscribedChannel(**kwargs)
@@ -351,7 +352,7 @@ class ChannelScanner(threading.Thread):
             valid = self.vid_is_valid(record)
             if valid:
                 self.add_video_to_queue(vid_data)
-                self.added_to_queue.append(record)
+                self.added_to_queue.append(vid_data)
 
         return self.added_to_queue
 
@@ -371,7 +372,6 @@ class ChannelScanner(threading.Thread):
                 "Adding to queue: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
             request = youtube.client.playlistItems().insert(part='snippet', body=body)
             response = youtube.execute(request)
-            self.records.add_record(vid_data)
         except googleapiclient.errors.HttpError as e:
             print(e.content)
             print(e.error_details)
