@@ -3,6 +3,7 @@ import json
 from datetime import datetime, timedelta
 from handlers.utilities import Logger
 import googleapiclient.errors
+import threading
 
 logger = Logger()
 
@@ -220,6 +221,7 @@ class QueueHandler:
         channel_names = []
         rank_data = self.ranks.define_ranks()
         for rank in rank_order:
+            logger.write("Scanning %s" % rank)
             for rank_block in rank_data:
                 if rank_block.name == rank:
                     channel_names += rank_block.get_channels()
@@ -228,6 +230,7 @@ class QueueHandler:
 
     def scan_channels(self, all_videos=False, channel_names=None):
         added_to_queue = []
+        threads = []
         if channel_names is None:
             channel_details = self.channel_details
         else:
@@ -240,7 +243,25 @@ class QueueHandler:
             kwargs = channel_details[channel_name]
             kwargs['name'] = channel_name
             if not self.ranks.channel_filtered(channel_id=kwargs['id']):
-                added_to_queue = added_to_queue + self.scan_channel(all=all_videos, **kwargs)
+                # added_to_queue = added_to_queue + self.scan_channel(all=all_videos, **kwargs)
+                thread_kwargs = {
+                    "queue_id": self.id,
+                    "name": channel_name,
+                    "oldest_date": self.oldest_date,
+                    "records": self.records,
+                    "channel_kwargs": kwargs,
+                    "all": all_videos
+                }
+                threads.append(ChannelScanner(**thread_kwargs))
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        for thread in threads:
+            added_to_queue += thread.added_to_queue
 
         if len(added_to_queue) > 0:
             logger.write("Added to queue:")
@@ -299,3 +320,68 @@ class QueueHandler:
             raise
 
         return response
+
+
+class ChannelScanner(threading.Thread):
+    def __init__(self, queue_id, name, oldest_date, records, channel_kwargs, all):
+        super().__init__()
+        self.queue_id = queue_id
+        self.name = name
+        self.added_to_queue = []
+        self.oldest_date = oldest_date
+        self.records = records
+        self.channel_kwargs = channel_kwargs
+        self.all = all
+
+    def run(self):
+        logger.write("Starting thread: %s" % self.name)
+        channel = SubscribedChannel(**self.channel_kwargs)
+        channel.get_latest(all=self.all)
+        self.added_to_queue = []
+        for vid_data in channel.newest:
+            record = {
+                'videoId': vid_data['snippet']['resourceId']['videoId'],
+                'publishedAt': vid_data['snippet']['publishedAt'],
+                'channelId': vid_data['snippet']['channelId'],
+                'channelTitle': vid_data['snippet']['channelTitle'],
+                'title': vid_data['snippet']['title']
+            }
+            valid = self.vid_is_valid(record)
+            if valid:
+                self.add_video_to_queue(vid_data)
+                self.added_to_queue.append(record)
+
+        return self.added_to_queue
+
+    def add_video_to_queue(self, vid_data):
+        youtube = client.YoutubeClientHandler()
+        body = {
+            'snippet': {
+                'playlistId': self.queue_id,
+                'resourceId': {
+                    'kind': vid_data['snippet']['resourceId']['kind'],
+                    'videoId': vid_data['snippet']['resourceId']['videoId']
+                }
+            }
+        }
+        try:
+            logger.write(
+                "Adding to queue: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
+            request = youtube.client.playlistItems().insert(part='snippet', body=body)
+            response = youtube.execute(request)
+            self.records.add_record(vid_data)
+        except googleapiclient.errors.HttpError as e:
+            print(e.content)
+            print(e.error_details)
+            print(e.resp)
+            raise
+
+        return response
+
+    def vid_is_valid(self, record):
+        if record['publishedAt'] > self.oldest_date:
+            if record['videoId'] not in self.records.channel_vids_added(record['channelId']):
+                return True
+            else:
+                return False
+        return False

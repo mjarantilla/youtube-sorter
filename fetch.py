@@ -60,7 +60,7 @@ for flag in sorted(flags):
 args = vars(parser.parse_args())
 if args['merge'] is not None:
     print("Merging")
-    merge(legacy_filepath="./records.json.legacy")
+    merge(legacy_filepath=args['merge'])
 ranks = []
 for rank in ['f1', 'primary', 'secondary', 'waiting']:
     if args[rank]:
