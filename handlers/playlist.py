@@ -1,5 +1,6 @@
 from handlers import client, utilities, ranks
 import json
+from time import sleep
 from datetime import datetime, timedelta
 from handlers.utilities import Logger
 import googleapiclient.errors
@@ -256,6 +257,7 @@ class QueueHandler:
 
         for thread in threads:
             thread.start()
+            sleep(0.1)
 
         for thread in threads:
             thread.join()
