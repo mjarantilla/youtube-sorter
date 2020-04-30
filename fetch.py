@@ -71,4 +71,7 @@ for rank in ['f1', 'primary', 'secondary', 'waiting']:
     if args[rank]:
         ranks.append(rank)
 queue = QueueHandler()
-queue.scan_ordered_channels(ranks)
+if args['all']:
+    queue.scan_channels(all_videos=True)
+else:
+    queue.scan_ordered_channels(ranks)
