@@ -62,6 +62,11 @@ if args['merge'] is not None:
     print("Merging")
     merge(legacy_filepath=args['merge'])
 ranks = []
+args['f1'] = True
+args['primary'] = True
+if args['all']:
+    args['secondary'] = True
+    args['waiting'] = True
 for rank in ['f1', 'primary', 'secondary', 'waiting']:
     if args[rank]:
         ranks.append(rank)
