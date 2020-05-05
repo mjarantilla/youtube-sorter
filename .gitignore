@@ -2,7 +2,7 @@
 *key.json*
 *token.pickle*
 *_pycache_*
-python_new
+python
 logs/*
 test.py
 records.json
