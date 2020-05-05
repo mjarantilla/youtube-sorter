@@ -5,6 +5,5 @@
 python
 logs/*
 test.py
-records.json
-records.json.legacy
+records.json*
 ranks.json
