@@ -85,7 +85,7 @@ class LogMessage:
         fp.close()
 
         if not self.silent:
-            print(": ".join([self.event_time, self.msg]))
+            print(": ".join([self.event_time, self.msg]).encode("utf-8"))
 
 
 def print_json(obj, fp=None):

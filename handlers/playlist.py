@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from handlers.utilities import Logger
 import googleapiclient.errors
 import threading
+import copy
 
 logger = Logger()
 
@@ -351,6 +352,12 @@ class ChannelScanner(threading.Thread):
             }
             valid = self.vid_is_valid(record)
             if valid:
+                fp = open('./logs/snippets.log', mode='a')
+                tmp_vid_data = copy.deepcopy(vid_data)
+                tmp_vid_data['snippet']['publishedAt'] = tmp_vid_data['snippet']['publishedAt'].strftime("%Y-%m-%dT%H:%M:%S.%f")
+                utilities.print_json(tmp_vid_data, fp)
+                fp.close()
+
                 self.add_video_to_queue(vid_data)
                 self.added_to_queue.append(vid_data)
 
