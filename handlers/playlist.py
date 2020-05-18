@@ -193,10 +193,13 @@ class SubscribedChannel:
             counter += 1
             if counter == 50:
                 counter = 0
+                request_list.append([])
                 page += 1
 
-        for page in request_list:
-            id_list = ",".join(page)
+        utilities.print_json(request_list)
+
+        for page_list in request_list:
+            id_list = ",".join(page_list)
             kwargs = {
                 "part": "snippet",
                 "id": id_list
@@ -239,6 +242,7 @@ class QueueHandler:
         days_to_search = config.variables['DAYS_TO_SEARCH']
         self.date_format = config.variables['YOUTUBE_DATE_FORMAT']
         self.oldest_date = datetime.now() - timedelta(days=days_to_search)
+        logger.write(self.oldest_date.strftime(config.variables['EVENT_LOG_FORMAT']))
 
     def scan_ordered_channels(self, rank_order=None):
         if rank_order is None:
