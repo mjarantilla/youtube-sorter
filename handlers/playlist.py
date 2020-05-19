@@ -196,17 +196,31 @@ class SubscribedChannel:
                 request_list.append([])
                 page += 1
 
-        utilities.print_json(request_list)
-
+        page_num = 0
+        threads = []
         for page_list in request_list:
             id_list = ",".join(page_list)
             kwargs = {
                 "part": "snippet",
                 "id": id_list
             }
-            request = youtube.client.videos().list(**kwargs)
-            response = youtube.execute(request)
-            results += response['items']
+            page_id = "%s Page %i" % (self.name, page_num)
+            page_num += 1
+            request = RequestThreader(page_id=page_id, request_kwargs=kwargs)
+            threads.append(request)
+
+        for thread in threads:
+            thread.start()
+
+        for thread in threads:
+            thread.join()
+
+        for thread in threads:
+            # response = thread.response
+            # request = youtube.client.videos().list(**kwargs)
+            # response = youtube.execute(request)
+            results += thread.response['items']
+
         for vid_details in results:
             vid_details['snippet']['publishedAt'] = self.correct_date_format(vid_details['snippet']['publishedAt'])
 
@@ -229,6 +243,20 @@ class SubscribedChannel:
             published_date = datetime.strptime(published, modified_date_format)
 
         return published_date
+
+
+class RequestThreader(threading.Thread):
+    def __init__(self, page_id, request_kwargs):
+        super().__init__()
+        self.kwargs = request_kwargs
+        self.name = page_id
+        self.response = None
+
+    def run(self):
+        logger.write("Starting thread: %s" % self.name)
+        youtube = client.YoutubeClientHandler()
+        request = youtube.client.videos().list(**self.kwargs)
+        self.response = youtube.execute(request)
 
 
 class QueueHandler:
@@ -283,12 +311,17 @@ class QueueHandler:
                 }
                 threads.append(ChannelScanner(**thread_kwargs))
 
-        for thread in threads:
-            thread.start()
-            sleep(0.1)
+        if all_videos:
+            for thread in threads:
+                thread.start()
+                thread.join()
+        else:
+            for thread in threads:
+                thread.start()
+                sleep(0.1)
 
-        for thread in threads:
-            thread.join()
+            for thread in threads:
+                thread.join()
 
         for thread in threads:
             added_to_queue += thread.added_to_queue
@@ -297,7 +330,7 @@ class QueueHandler:
             logger.write("Added to queue:")
             for vid_data in added_to_queue:
                 logger.write("\t- %s: %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
-                self.records.add_record(vid_data)
+                # self.records.add_record(vid_data)
 
     def scan_channel(self, all=False, **kwargs):
         channel = SubscribedChannel(**kwargs)
@@ -410,6 +443,7 @@ class ChannelScanner(threading.Thread):
                 "Adding to queue: %s - %s" % (vid_data['snippet']['channelTitle'], vid_data['snippet']['title']))
             request = youtube.client.playlistItems().insert(part='snippet', body=body)
             response = youtube.execute(request)
+            self.records.add_record(vid_data=vid_data)
         except googleapiclient.errors.HttpError as e:
             print(e.content)
             print(e.error_details)
