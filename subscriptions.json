@@ -516,10 +516,6 @@
       "id": "UCiB8h9jD2Mlxx96ZFnGDSJw",
       "uploads": "UUiB8h9jD2Mlxx96ZFnGDSJw"
     },
-    "PBS Digital Studios": {
-      "id": "UCq6OAftTQOuUBRdtUDq5SUA",
-      "uploads": "UUq6OAftTQOuUBRdtUDq5SUA"
-    },
     "PBS Eons": {
       "id": "UCzR-rom72PHN9Zg7RML9EbA",
       "uploads": "UUzR-rom72PHN9Zg7RML9EbA"
@@ -539,6 +535,10 @@
     "PBS Space Time": {
       "id": "UC7_gcs09iThXybpVgjHZ_7g",
       "uploads": "UU7_gcs09iThXybpVgjHZ_7g"
+    },
+    "PBS Voices": {
+      "id": "UCq6OAftTQOuUBRdtUDq5SUA",
+      "uploads": "UUq6OAftTQOuUBRdtUDq5SUA"
     },
     "PBSoffbook": {
       "id": "UCpH3Eia7Qsncq-qmhltZ6uQ",
@@ -611,10 +611,6 @@
     "Real Science": {
       "id": "UC176GAQozKKjhz62H8u9vQQ",
       "uploads": "UU176GAQozKKjhz62H8u9vQQ"
-    },
-    "Renault Sport Formula One Team": {
-      "id": "UC7DUM4OM12IiCX4oKY9VI7w",
-      "uploads": "UU7DUM4OM12IiCX4oKY9VI7w"
     },
     "Roadshow": {
       "id": "UC4Llz_FxdMEU0iWO4aG_Xjg",
@@ -751,6 +747,10 @@
     "Team Unicorn": {
       "id": "UC571nE1SboPn6m6aDO13-DQ",
       "uploads": "UU571nE1SboPn6m6aDO13-DQ"
+    },
+    "Techquickie": {
+      "id": "UC0vBXGSyV14uvJ4hECDOl0Q",
+      "uploads": "UU0vBXGSyV14uvJ4hECDOl0Q"
     },
     "TestTube 101": {
       "id": "UCvvzRsHJBXkMeFybWFnEjNg",
@@ -946,7 +946,6 @@
     "Aston Martin Red Bull Racing",
     "Automotive Aesthetic",
     "Autosport",
-    "Autotrader",
     "Because Science",
     "Binging with Babish",
     "Biographics",
@@ -1060,12 +1059,12 @@
     "Nuclear Family",
     "OnlyLeigh",
     "Origin Of Everything",
-    "PBS Digital Studios",
     "PBS Eons",
     "PBS Game/Show",
     "PBS Idea Channel",
     "PBS Infinite Series",
     "PBS Space Time",
+    "PBS Voices",
     "PBSoffbook",
     "Pack Hacker",
     "Peak Design",
@@ -1084,7 +1083,6 @@
     "Reactions",
     "Real Engineering",
     "Real Science",
-    "Renault Sport Formula One Team",
     "Roadshow",
     "Robbert Alblas",
     "Roborace",
@@ -1119,6 +1117,7 @@
     "THE RACE",
     "TRYANGLE FILMS",
     "Team Unicorn",
+    "Techquickie",
     "TestTube 101",
     "The Beauty Of",
     "The Film Theorists",
@@ -1156,7 +1155,6 @@
     "YouTube Rewind",
     "YourekaScience",
     "ZAGAT",
-    "carwow",
     "ehmteevee",
     "minutephysics",
     "savagegeese",
