@@ -90,7 +90,7 @@ class Records:
 
     def add_record(self, vid_data):
         record = {
-            'videoId': vid_data['snippet']['resourceId']['videoId'],
+            'videoId': vid_data['id'],
             'publishedAt': vid_data['snippet']['publishedAt'].strftime(self.youtube_date_format),
             'channelId': vid_data['snippet']['channelId'],
             'channelTitle': vid_data['snippet']['channelTitle'],
@@ -157,7 +157,7 @@ class SubscribedChannel:
         youtube = client.YoutubeClientHandler()
 
         request = youtube.client.playlistItems().list(
-            part="snippet",
+            part="contentDetails",
             maxResults=50,
             playlistId=self.playlist_id
         )
@@ -170,7 +170,7 @@ class SubscribedChannel:
         if all:
             while 'nextPageToken' in response:
                 request = youtube.client.playlistItems().list(
-                    part="snippet",
+                    part="contentDetails",
                     maxResults=50,
                     playlistId=self.playlist_id,
                     pageToken=response['nextPageToken']
@@ -181,11 +181,34 @@ class SubscribedChannel:
             logger.write("Pages of videos: %i" % pages)
             logger.write("Videos fetched: %i" % len(items))
 
-        items = sorted(items, reverse=True, key=lambda x: x['snippet']['publishedAt'])
+        request_list = [
+            []
+        ]
+        counter = 0
+        page = 0
+        results = []
         for item in items:
-            item['snippet']['publishedAt'] = self.correct_date_format(item['snippet']['publishedAt'])
+            vid_id = item['contentDetails']['videoId']
+            request_list[page].append(vid_id)
+            counter += 1
+            if counter == 50:
+                counter = 0
+                page += 1
 
-        self.newest = items
+        for page in request_list:
+            id_list = ",".join(page)
+            kwargs = {
+                "part": "snippet",
+                "id": id_list
+            }
+            request = youtube.client.videos().list(**kwargs)
+            response = youtube.execute(request)
+            results += response['items']
+        for vid_details in results:
+            vid_details['snippet']['publishedAt'] = self.correct_date_format(vid_details['snippet']['publishedAt'])
+
+        results = sorted(results, reverse=True, key=lambda x: x['snippet']['publishedAt'])
+        self.newest = results
 
         # for item in items:
         #     if self.records.is_newer(last_video_recorded['publishedAt'], item['snippet']['publishedAt']):
@@ -344,12 +367,16 @@ class ChannelScanner(threading.Thread):
         self.added_to_queue = []
         for vid_data in channel.newest:
             record = {
-                'videoId': vid_data['snippet']['resourceId']['videoId'],
+                'videoId': vid_data['id'],
                 'publishedAt': vid_data['snippet']['publishedAt'],
                 'channelId': vid_data['snippet']['channelId'],
                 'channelTitle': vid_data['snippet']['channelTitle'],
                 'title': vid_data['snippet']['title']
             }
+
+            if 'liveBroadcastContent' in vid_data['snippet']:
+                record['liveBroadcastContent'] = vid_data['snippet']['liveBroadcastContent']
+
             valid = self.vid_is_valid(record)
             if valid:
                 fp = open('./logs/snippets.log', mode='a')
@@ -369,8 +396,8 @@ class ChannelScanner(threading.Thread):
             'snippet': {
                 'playlistId': self.queue_id,
                 'resourceId': {
-                    'kind': vid_data['snippet']['resourceId']['kind'],
-                    'videoId': vid_data['snippet']['resourceId']['videoId']
+                    'kind': "youtube#video",
+                    'videoId': vid_data['id']
                 }
             }
         }
@@ -390,7 +417,17 @@ class ChannelScanner(threading.Thread):
     def vid_is_valid(self, record):
         if record['publishedAt'] > self.oldest_date:
             if record['videoId'] not in self.records.channel_vids_added(record['channelId']):
-                return True
-            else:
-                return False
+                tmp_record = {
+                    'title': record['title'],
+                    'channelTitle': record['channelTitle']
+                }
+                if 'liveBroadcastContent' in tmp_record:
+                    tmp_record['liveBroadcastContent'] = record['liveBroadcastContent']
+                if 'liveBroadcastContent' in record:
+                    if record['liveBroadcastContent'] == 'none':
+                        return True
+                    else:
+                        logger.write("NOT YET PUBLISHED: %s - %s" % (record['channelTitle'], record['title']))
+                else:
+                    return True
         return False
