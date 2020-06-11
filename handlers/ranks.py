@@ -56,16 +56,16 @@ class Tier:
 
 class RanksHandler():
     def __init__(self):
-        config = utilities.ConfigHandler()
-        self.data = json.load(open(config.ranks_filepath, mode='r'))
+        self.config = utilities.ConfigHandler()
+        self.data = json.load(open(self.config.ranks_filepath, mode='r'))
         self.ranks = self.data['ranks']
         self.filtered = self.data['filters']
         self.filtered_channels = []
         for channel_name in self.filtered['channels']:
             self.filtered_channels.append(self.filtered['channels'][channel_name])
         self.playlists = self.data['playlist_ids']
-        for tier in config.variables['TIER_PLAYLISTS']:
-            self.playlists[tier] = config.variables['TIER_PLAYLISTS'][tier]
+        for tier in self.config.variables['TIER_PLAYLISTS']:
+            self.playlists[tier] = self.config.variables['TIER_PLAYLISTS'][tier]
         self.rank_data = []
 
     def define_ranks(self):
@@ -82,6 +82,34 @@ class RanksHandler():
             return True
         else:
             return False
+
+    def get_ordered_channels(self, tier):
+        def get_tier_channels(data):
+            channels = []
+            if 'channels' in data:
+                channels = data['channels']
+            if 'subtiers' in data:
+                for subtier in data['subtiers']:
+                    channels = channels + get_tier_channels(subtier)
+            return channels
+
+        for tier_data in self.ranks:
+            if tier_data["tier"] == tier:
+                break
+
+        if tier_data["tier"] == tier:
+            results = get_tier_channels(tier_data)
+
+            subscriptions = json.load(open(self.config.subscriptions_filepath, mode='r'))['details']
+            id_list = []
+            for result in results:
+                id_list.append(subscriptions[result]['id'])
+
+            return id_list
+        return []
+
+    def get_tier_playlist_id(self, tier):
+        return None
 
 
 class Autolister:
