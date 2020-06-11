@@ -16,6 +16,8 @@ class YoutubePlaylist:
         self.id = kwargs['id']
         self.videos = []
         self.client = client.YoutubeClientHandler().get_client()
+        self.new_items_queue = []
+        self.deleted_items_queue = []
 
     def get_items(self):
         kwargs = {
@@ -26,36 +28,19 @@ class YoutubePlaylist:
 
         request = self.client.playlistItems().list(**kwargs)
         response = request.execute()
-        self.videos = response['items']
+        items = response['items']
 
         while 'nextPageToken' in response:
             kwargs['pageToken'] = response['nextPageToken']
             request = self.client.playlistItems().list(**kwargs)
             response = request.execute()
-            self.videos = self.videos + response['items']
+            items = items + response['items']
 
-    def add_item(self, **kwargs):
-        position = kwargs['position']
-        previous_playlist = kwargs['previous_playlist'] if 'previous_playlist' in kwargs else None
+        self.videos = items
 
-        if previous_playlist is not None and previous_playlist != self.id:
-            self.move_item(**kwargs)
-        elif previous_playlist == self.id:
-            self.change_item_position(**kwargs)
-        else:
-            self.insert_item(**kwargs)
-
-    def delete_item(self, **kwargs):
-        return None
-
-    def move_item(self, **kwargs):
-        return None
-
-    def change_item_position(self, **kwargs):
-        return None
-
-    def insert_item(self, **kwargs):
-        return None
+    def sort(self):
+        ranks_handler = ranks.RanksHandler()
+        ordered_channel_ids = ranks_handler.get_ordered_channels(self.tier)
 
 
 class Records:
