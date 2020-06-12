@@ -296,6 +296,7 @@ class QueueHandler:
                 if channel_name in self.channel_details:
                     channel_details[channel_name] = self.channel_details[channel_name]
 
+        batch = []
         for channel_name in channel_details:
             kwargs = channel_details[channel_name]
             kwargs['name'] = channel_name
@@ -309,22 +310,46 @@ class QueueHandler:
                     "channel_kwargs": kwargs,
                     "all": all_videos
                 }
-                threads.append(ChannelScanner(**thread_kwargs))
+                batch.append(ChannelScanner(**thread_kwargs))
+            if len(batch) > 5:
+                threads.append(batch.copy())
+                batch = []
+                logger.write("Batch %i written" % len(threads))
 
         if all_videos:
-            for thread in threads:
-                thread.start()
-                thread.join()
+            batch_count = 0
+            for batch in threads:
+                logger.write("Processing Batch %i" % batch_count)
+                for thread in batch:
+                    logger.write("- %s" % thread.name)
+
+                for thread in batch:
+                    thread.start()
+                    thread.join()
+                logger.write("\n\n\n")
+                batch_count += 1
         else:
-            for thread in threads:
-                thread.start()
-                sleep(0.1)
+            batch_count = 0
+            for batch in threads:
+                logger.write("Processing Batch %i" % batch_count)
+                for thread in batch:
+                    logger.write("- %s" % thread.name)
 
-            for thread in threads:
-                thread.join()
+                for thread in batch:
+                    thread.start()
+                    sleep(0.1)
 
-        for thread in threads:
-            added_to_queue += thread.added_to_queue
+                for thread in batch:
+                    thread.join()
+
+                logger.write("\n\n\n")
+
+                batch_count += 1
+            logger.write("All batches done.")
+
+        for batch in threads:
+            for thread in batch:
+                added_to_queue += thread.added_to_queue
 
         if len(added_to_queue) > 0:
             logger.write("Added to queue:")
