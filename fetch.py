@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3.6
-from handlers.playlist import QueueHandler, LegacyRecords
+from handlers.queue import QueueHandler, LegacyRecords
 from handlers.utilities import Logger
 import argparse
 

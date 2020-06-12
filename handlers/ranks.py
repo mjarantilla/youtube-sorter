@@ -1,4 +1,4 @@
-from handlers import client, playlist
+from handlers import client, queue
 import json
 from handlers import utilities
 

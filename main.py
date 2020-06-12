@@ -1,4 +1,4 @@
-from handlers import client, playlist, ranks, utilities
+from handlers import client, queue, ranks, utilities
 import argparse
 
 def main():
