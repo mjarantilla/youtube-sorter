@@ -103,6 +103,7 @@ class SubscribedChannel:
         config = utilities.ConfigHandler()
         self.queue_id = config.variables['QUEUE_ID']
         self.date_format = config.variables['YOUTUBE_DATE_FORMAT']
+        self.oldest_date = kwargs['oldest_date']
 
     def get_latest(self, all=False):
         logger.write("Getting latest videos: %s" % self.name)
@@ -130,23 +131,34 @@ class SubscribedChannel:
                 response = youtube.execute(request)
                 items = items + response['items']
                 pages += 1
-            logger.write("Pages of videos: %i" % pages)
-            logger.write("Videos fetched: %i" % len(items))
+        logger.write("Pages of videos for %s: %i" % (self.name, pages))
+        logger.write("Videos fetched for %s: %i" % (self.name, len(items)))
 
         request_list = [
             []
         ]
         counter = 0
+        total = 0
         page = 0
         results = []
         for item in items:
             vid_id = item['contentDetails']['videoId']
-            request_list[page].append(vid_id)
-            counter += 1
+            published_date = str(item['contentDetails']['videoPublishedAt']).split('.')[0].replace("Z", "")+".0"
+            record = {
+                'videoId': vid_id,
+                'publishedAt': datetime.strptime(published_date, self.date_format),
+                'channelId': self.channel_id
+            }
+            if self.vid_is_valid(record):
+                request_list[page].append(vid_id)
+                counter += 1
+                total += 1
             if counter == 50:
                 counter = 0
                 request_list.append([])
                 page += 1
+
+        logger.write("Videos requiring additional details for %s: %i" % (self.name, total))
 
         page_num = 0
         threads = []
@@ -196,6 +208,12 @@ class SubscribedChannel:
 
         return published_date
 
+    def vid_is_valid(self, record):
+        if record['publishedAt'] > self.oldest_date:
+            if record['videoId'] not in self.records.channel_vids_added(record['channelId']):
+                return True
+        return False
+
 
 class RequestThreader(threading.Thread):
     def __init__(self, page_id, request_kwargs):
@@ -205,7 +223,7 @@ class RequestThreader(threading.Thread):
         self.response = None
 
     def run(self):
-        logger.write("Starting thread: %s" % self.name)
+        logger.write("Starting RequestThreader thread: %s" % self.name)
         youtube = client.YoutubeClientHandler()
         request = youtube.client.videos().list(**self.kwargs)
         self.response = youtube.execute(request)
@@ -248,6 +266,7 @@ class QueueHandler:
                 if channel_name in self.channel_details:
                     channel_details[channel_name] = self.channel_details[channel_name]
 
+        batch = []
         for channel_name in channel_details:
             kwargs = channel_details[channel_name]
             kwargs['name'] = channel_name
@@ -261,22 +280,46 @@ class QueueHandler:
                     "channel_kwargs": kwargs,
                     "all": all_videos
                 }
-                threads.append(ChannelScanner(**thread_kwargs))
+                batch.append(ChannelScanner(**thread_kwargs))
+            if len(batch) > 5:
+                threads.append(batch.copy())
+                batch = []
+                logger.write("Batch %i written" % len(threads))
 
         if all_videos:
-            for thread in threads:
-                thread.start()
-                thread.join()
+            batch_count = 0
+            for batch in threads:
+                logger.write("Processing Batch %i" % batch_count)
+                for thread in batch:
+                    logger.write("- %s" % thread.name)
+
+                for thread in batch:
+                    thread.start()
+                    thread.join()
+                logger.write("\n\n\n")
+                batch_count += 1
         else:
-            for thread in threads:
-                thread.start()
-                sleep(0.1)
+            batch_count = 0
+            for batch in threads:
+                logger.write("Processing Batch %i" % batch_count)
+                for thread in batch:
+                    logger.write("- %s" % thread.name)
 
-            for thread in threads:
-                thread.join()
+                for thread in batch:
+                    thread.start()
+                    sleep(0.1)
 
-        for thread in threads:
-            added_to_queue += thread.added_to_queue
+                for thread in batch:
+                    thread.join()
+
+                logger.write("\n\n\n")
+
+                batch_count += 1
+            logger.write("All batches done.")
+
+        for batch in threads:
+            for thread in batch:
+                added_to_queue += thread.added_to_queue
 
         if len(added_to_queue) > 0:
             logger.write("Added to queue:")
@@ -347,6 +390,7 @@ class ChannelScanner(threading.Thread):
         self.oldest_date = oldest_date
         self.records = records
         self.channel_kwargs = channel_kwargs
+        channel_kwargs['oldest_date'] = self.oldest_date
         self.all = all
 
     def run(self):
