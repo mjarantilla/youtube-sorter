@@ -11,11 +11,18 @@ from google.auth.transport.requests import Request
 
 
 class YoutubeClientHandler:
-    def __init__(self, pickle=None):
+    def __init__(self, pickle=None, secrets_filepath=None, clear=False):
         self.pickle = "token.pickle" if pickle is None else pickle
+        if clear:
+            if os.path.exists(self.pickle):
+                os.remove(self.pickle)
 
         self.config = ConfigHandler()
+        self.secrets_filepath = self.config.secrets_filepath if secrets_filepath is None else secrets_filepath
         self.client = self.get_client()
+
+        print(self.pickle)
+        print(self.secrets_filepath)
 
     def refresh_vars(self):
         self.config = ConfigHandler()
@@ -26,7 +33,7 @@ class YoutubeClientHandler:
 
         api_service_name = self.config.variables['API_SERVICE_NAME']
         api_version = self.config.variables['API_VERSION']
-        client_secrets_file = self.config.secrets_filepath
+        client_secrets_file = self.secrets_filepath
 
         # Get credentials and create an API client
         # flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
