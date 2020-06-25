@@ -34,6 +34,12 @@ for arg in sorted(arguments):
     help_text = arguments[arg]['help']
     parser.add_argument('-' + shorthand, '--' + dest_var, dest=dest_var, help=help_text)
 
+for flag in sorted(flags):
+    dest_var = flag
+    shorthand = flags[flag]['shorthand']
+    help_text = flags[flag]['help']
+    parser.add_argument('-' + shorthand, '--' + dest_var, dest=dest_var, action='store_true', help=help_text)
+
 args = vars(parser.parse_args())
 
 for arg in args:
