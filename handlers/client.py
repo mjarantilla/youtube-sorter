@@ -21,9 +21,6 @@ class YoutubeClientHandler:
         self.secrets_filepath = self.config.secrets_filepath if secrets_filepath is None else secrets_filepath
         self.client = self.get_client()
 
-        print(self.pickle)
-        print(self.secrets_filepath)
-
     def refresh_vars(self):
         self.config = ConfigHandler()
 
