@@ -120,6 +120,10 @@
       "id": "UC7u-Dg0jb7g9s7XjmtJrtpg",
       "uploads": "UU7u-Dg0jb7g9s7XjmtJrtpg"
     },
+    "Channel Super Fun": {
+      "id": "UCBZiUUYeLfS5rIj4TQvgSvA",
+      "uploads": "UUBZiUUYeLfS5rIj4TQvgSvA"
+    },
     "Chobot": {
       "id": "UCJgpC36o50zApLcmpG0CBSA",
       "uploads": "UUJgpC36o50zApLcmpG0CBSA"
@@ -235,10 +239,6 @@
     "Extra Credits": {
       "id": "UCCODtTcd5M1JavPCOr_Uydg",
       "uploads": "UUCODtTcd5M1JavPCOr_Uydg"
-    },
-    "FBE": {
-      "id": "UC0v-tlzsn0QZwJnkiaUSJVQ",
-      "uploads": "UU0v-tlzsn0QZwJnkiaUSJVQ"
     },
     "FORMULA 1": {
       "id": "UCB_qr75-ydFVKSF9Dmo6izg",
@@ -367,6 +367,10 @@
     "James Allen on F1": {
       "id": "UCYa-3V08XXdoUBtiWWu2ndQ",
       "uploads": "UUYa-3V08XXdoUBtiWWu2ndQ"
+    },
+    "James Hoffmann": {
+      "id": "UCMb0O2CdPBNi-QqPk5T3gsQ",
+      "uploads": "UUMb0O2CdPBNi-QqPk5T3gsQ"
     },
     "Journey to the Microcosmos": {
       "id": "UCBbnbBWJtwsf0jLGUwX5Q3g",
@@ -588,10 +592,6 @@
       "id": "UCAL3JXZSzSm8AlZyD3nQdBA",
       "uploads": "UUAL3JXZSzSm8AlZyD3nQdBA"
     },
-    "REACT": {
-      "id": "UCHEf6T_gVq4tlW5i91ESiWg",
-      "uploads": "UUHEf6T_gVq4tlW5i91ESiWg"
-    },
     "REI": {
       "id": "UCwZcNfPpV9CXSVbpH1ckVmw",
       "uploads": "UUwZcNfPpV9CXSVbpH1ckVmw"
@@ -748,6 +748,10 @@
       "id": "UC571nE1SboPn6m6aDO13-DQ",
       "uploads": "UU571nE1SboPn6m6aDO13-DQ"
     },
+    "TechLinked": {
+      "id": "UCeeFfhMcJa1kjtfZAGskOCA",
+      "uploads": "UUeeFfhMcJa1kjtfZAGskOCA"
+    },
     "Techquickie": {
       "id": "UC0vBXGSyV14uvJ4hECDOl0Q",
       "uploads": "UU0vBXGSyV14uvJ4hECDOl0Q"
@@ -827,10 +831,6 @@
     "Top Gear": {
       "id": "UCjOl2AUblVmg2rA_cRgZkFg",
       "uploads": "UUjOl2AUblVmg2rA_cRgZkFg"
-    },
-    "Try Not To": {
-      "id": "UCeJ5fDmSBH-VbRdedaedRTA",
-      "uploads": "UUeJ5fDmSBH-VbRdedaedRTA"
     },
     "Tyre Reviews": {
       "id": "UCEvB1bmKjPWZ3V1wSdBnXPQ",
@@ -960,6 +960,7 @@
     "Carfection",
     "CatswillRule",
     "Chain Bear",
+    "Channel Super Fun",
     "Chobot",
     "Chris Harris on Cars",
     "Chubbyemu",
@@ -989,7 +990,6 @@
     "Everyday Astronaut",
     "Explorium",
     "Extra Credits",
-    "FBE",
     "FORMULA 1",
     "Felicia Day",
     "Ferrari",
@@ -1022,6 +1022,7 @@
     "Jaiden Animations",
     "Jake Roper",
     "James Allen on F1",
+    "James Hoffmann",
     "Journey to the Microcosmos",
     "Julia Wilde",
     "KYLE.ENGINEERS",
@@ -1077,7 +1078,6 @@
     "Planetary Resources",
     "PressHeartToContinue",
     "Primitive Technology",
-    "REACT",
     "REI",
     "Randy Pobst",
     "Reactions",
@@ -1117,6 +1117,7 @@
     "THE RACE",
     "TRYANGLE FILMS",
     "Team Unicorn",
+    "TechLinked",
     "Techquickie",
     "TestTube 101",
     "The Beauty Of",
@@ -1137,7 +1138,6 @@
     "Today I Found Out",
     "Tom Scott",
     "Top Gear",
-    "Try Not To",
     "Tyre Reviews",
     "Verge Science",
     "Vergecast",
