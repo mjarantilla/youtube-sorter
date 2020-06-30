@@ -19,7 +19,11 @@ class Tier:
     def get_subtiers(self, **kwargs):
         self.subtiers = []
         subtiers = kwargs['subtiers']
+        counter = 0
         for subtier_kwargs in subtiers:
+            if 'tier' not in subtier_kwargs:
+                subtier_kwargs['tier'] = "%s_%s" % (self.name, str(counter).zfill(2))
+                counter += 1
             if 'separate' not in subtier_kwargs:
                 subtier_kwargs['separate'] = self.separate
             if 'playlist' not in subtier_kwargs and self.playlist is not None:
@@ -64,6 +68,7 @@ class RanksHandler():
         for channel_name in self.filtered['channels']:
             self.filtered_channels.append(self.filtered['channels'][channel_name])
         self.playlists = self.data['playlist_ids']
+        self.queues = self.data['queues']
         for tier in config.variables['TIER_PLAYLISTS']:
             self.playlists[tier] = config.variables['TIER_PLAYLISTS'][tier]
         self.rank_data = []

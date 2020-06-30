@@ -304,6 +304,20 @@ class QueueHandler:
         self.scan_channels(channel_names=channel_names)
 
     def scan_channels(self, all_videos=False, channel_names=None):
+        def find_tier_queue_id(channel):
+            tier_name = ""
+            handler = self.ranks
+            for tier in handler.rank_data:
+                tier_name = tier.name
+                tier_channels = tier.get_channels()
+                if channel in tier_channels:
+                    break
+
+            if tier_name not in handler.playlists:
+                return handler.playlists['queue']
+            else:
+                return handler.playlists[tier_name]
+
         added_to_queue = []
         threads = []
         if channel_names is None:
@@ -316,12 +330,16 @@ class QueueHandler:
 
         batch = []
         for channel_name in channel_details:
+            tier_queue_id = find_tier_queue_id(channel_name)
+            if tier_queue_id is None:
+                tier_queue_id = self.id
+
             kwargs = channel_details[channel_name]
             kwargs['name'] = channel_name
             if not self.ranks.channel_filtered(channel_id=kwargs['id']):
                 # added_to_queue = added_to_queue + self.scan_channel(all=all_videos, **kwargs)
                 thread_kwargs = {
-                    "queue_id": self.id,
+                    "queue_id": tier_queue_id,
                     "name": channel_name,
                     "oldest_date": self.oldest_date,
                     "records": self.records,
