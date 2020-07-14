@@ -307,16 +307,19 @@ class QueueHandler:
         def find_tier_queue_id(channel):
             tier_name = ""
             handler = self.ranks
+            handler.define_ranks()
             for tier in handler.rank_data:
                 tier_name = tier.name
                 tier_channels = tier.get_channels()
                 if channel in tier_channels:
                     break
 
-            if tier_name not in handler.playlists:
-                return handler.playlists['queue']
+            if tier_name not in handler.queues:
+                logger.write("%s: default" % channel)
+                return handler.queues['queue']
             else:
-                return handler.playlists[tier_name]
+                logger.write("%s: %s" % (channel, tier_name))
+                return handler.queues[tier_name]
 
         added_to_queue = []
         threads = []
@@ -347,40 +350,27 @@ class QueueHandler:
                     "all": all_videos
                 }
                 batch.append(ChannelScanner(**thread_kwargs))
-            if len(batch) > 5:
+            if len(batch) > 10:
                 threads.append(batch.copy())
                 batch = []
                 logger.write("Batch %i written" % len(threads))
 
-        if all_videos:
-            batch_count = 0
-            for batch in threads:
-                logger.write("Processing Batch %i" % batch_count)
-                for thread in batch:
-                    logger.write("- %s" % thread.name)
+        batch_count = 0
+        for batch in threads:
+            logger.write("Processing Batch %i" % batch_count)
+            for thread in batch:
+                logger.write("- %s" % thread.name)
 
-                for thread in batch:
-                    thread.start()
-                    thread.join()
-                logger.write("\n\n\n")
-                batch_count += 1
-        else:
-            batch_count = 0
-            for batch in threads:
-                logger.write("Processing Batch %i" % batch_count)
-                for thread in batch:
-                    logger.write("- %s" % thread.name)
+            for thread in batch:
+                thread.start()
+                sleep(0.1)
 
-                for thread in batch:
-                    thread.start()
-                    sleep(0.1)
+            for thread in batch:
+                thread.join()
 
-                for thread in batch:
-                    thread.join()
+            logger.write("\n\n\n")
 
-                logger.write("\n\n\n")
-
-                batch_count += 1
+            batch_count += 1
             logger.write("All batches done.")
 
         for batch in threads:
