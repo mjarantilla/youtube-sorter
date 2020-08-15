@@ -171,24 +171,13 @@ class YoutubePlaylist(threading.Thread):
         if not add:
             old_pos = videos[video_id]['playlist_data']['snippet']['position']
 
-            # for vid_id in sorted(videos, key=lambda x: videos[x]['playlist_data']['snippet']['position']):
-            #     tmp_data = new_videolist[vid_id]
-            #     tmp_title = tmp_data['vid_data']['snippet']['title']
-            #     tmp_channel = tmp_data['vid_data']['snippet']['channelTitle']
-            #     tmp_position = tmp_data['playlist_data']['snippet']['position']
-            #     print("%s) %s: %s" % (tmp_position, tmp_channel, tmp_title))
-
             for vid_id in sorted(videos, key=lambda x: videos[x]['playlist_data']['snippet']['position']):
                 vid_data = new_videolist[vid_id]
-                video_title = vid_data['vid_data']['snippet']['title']
-                video_channel = vid_data['vid_data']['snippet']['channelTitle']
                 video_position = vid_data['playlist_data']['snippet']['position']
                 if vid_id != video_id:
                     if new_pos > old_pos and new_pos > video_position >= old_pos:
-                        # print("\tDecrementing %s: %s" % (video_channel, video_title))
                         vid_data['playlist_data']['snippet']['position'] -= 1
                     elif new_pos < old_pos and new_pos <= video_position < old_pos:
-                        # print("\tIncrementing %s: %s" % (video_channel, video_title))
                         vid_data['playlist_data']['snippet']['position'] += 1
                     else:
                         vid_data['playlist_data']['snippet']['position'] = vid_data['playlist_data']['snippet']['position']
@@ -197,17 +186,9 @@ class YoutubePlaylist(threading.Thread):
         else:
             for vid_id in sorted(videos, key=lambda x: videos[x]['playlist_data']['snippet']['position']):
                 vid_data = new_videolist[vid_id]
-                video_title = vid_data['vid_data']['snippet']['title']
-                video_channel = vid_data['vid_data']['snippet']['channelTitle']
                 video_position = vid_data['playlist_data']['snippet']['position']
                 if video_position >= new_pos:
                     vid_data['playlist_data']['snippet']['position'] += 1
-        # for vid_id in sorted(new_videolist, key=lambda x: new_videolist[x]['playlist_data']['snippet']['position']):
-        #     tmp_data = new_videolist[vid_id]
-        #     tmp_title = tmp_data['vid_data']['snippet']['title']
-        #     tmp_channel = tmp_data['vid_data']['snippet']['channelTitle']
-        #     tmp_position = tmp_data['playlist_data']['snippet']['position']
-        #     print("%s) %s: %s" % (tmp_position, tmp_channel, tmp_title))
 
         return new_videolist
 
@@ -224,7 +205,6 @@ class YoutubePlaylist(threading.Thread):
         for vid_id in sorted(total_sorted, key=lambda x: total_sorted[x]['playlist_data']['snippet']['position']):
             new_pos = total_sorted[vid_id]['playlist_data']['snippet']['position']
             vid_data = self.videos[vid_id] if vid_id not in self.queue else self.queue[vid_id]
-            channel = vid_data['vid_data']['snippet']['channelTitle']
             title = vid_data['vid_data']['snippet']['title']
             if vid_id in self.queue:
                 vid_data = self.queue[vid_id]
@@ -249,11 +229,8 @@ class YoutubePlaylist(threading.Thread):
         for vid_id in sorted(playlist_items_to_change, key=lambda x: playlist_items_to_change[x]['playlist_data']['snippet']['position']):
             vid_data = playlist_items_to_change[vid_id]
             pos = vid_data['playlist_data']['snippet']['position']
-            channel = vid_data['vid_data']['snippet']['channelTitle']
-            title = vid_data['vid_data']['snippet']['title']
 
             if 'destinationPlaylistId' in vid_data['playlist_data']['snippet']:
-                dest_playlist_id = vid_data['playlist_data']['snippet']['destinationPlaylistId']
                 self.transfer_playlist_item(vid_data=vid_data, vid_id=vid_id, old_playlist='queue', position=pos)
             else:
                 self.update_playlist_item_position(vid_data=vid_data, vid_id=vid_id, position=pos)
@@ -275,10 +252,6 @@ class YoutubePlaylist(threading.Thread):
             }
         }
 
-        resource = {
-            "snippet.playlistId": self.id,
-            "snippet.resourceId": vid_id
-        }
         if position is not None:
             body["snippet"]["position"] = position
 
@@ -286,6 +259,7 @@ class YoutubePlaylist(threading.Thread):
         delete_request = self.client.playlistItems().delete(id=vid_data['playlist_data']['id'])
 
         insert_response = insert_request.execute()
+        delete_response = delete_request.execute()
 
     def update_playlist_item_position(self, vid_data, vid_id, position=None):
         channel = vid_data['vid_data']['snippet']['channelTitle']
