@@ -78,9 +78,11 @@ class RanksHandler():
         for channel_name in self.filtered['channels']:
             self.filtered_channels.append(self.filtered['channels'][channel_name])
         self.playlists = self.data['playlist_ids']
+        self.queues = self.data['queues']
         for tier in self.config.variables['TIER_PLAYLISTS']:
             self.playlists[tier] = self.config.variables['TIER_PLAYLISTS'][tier]
         self.rank_data = []
+        self.subscriptions = self.data['channel_ids']
 
     def define_ranks(self):
         for rank_block in self.ranks:
@@ -146,7 +148,6 @@ class RanksHandler():
                 # return id_list
                 return results
         return []
-
 
     def get_tiers(self):
         for tier_data in self.ranks:
