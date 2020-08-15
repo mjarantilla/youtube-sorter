@@ -35,6 +35,7 @@ class YoutubePlaylist(threading.Thread):
         self.queue = []
         self.deleted_items_queue = []
         self.backlog = []
+        self.test = kwargs['test']
 
     def get_items(self, id=None):
         assign_self_videos = True if id is None else False
@@ -258,8 +259,11 @@ class YoutubePlaylist(threading.Thread):
         insert_request = self.client.playlistItems().insert(part="snippet", body=body)
         delete_request = self.client.playlistItems().delete(id=vid_data['playlist_data']['id'])
 
-        insert_response = insert_request.execute()
-        delete_response = delete_request.execute()
+        if not self.test:
+            insert_response = insert_request.execute()
+            delete_response = delete_request.execute()
+        else:
+            print("Would have executed, but currently in test mode")
 
     def update_playlist_item_position(self, vid_data, vid_id, position=None):
         channel = vid_data['vid_data']['snippet']['channelTitle']
@@ -282,7 +286,10 @@ class YoutubePlaylist(threading.Thread):
             body["snippet"]["position"] = position
 
         update_request = self.client.playlistItems().update(part="snippet", body=body)
-        response = update_request.execute()
+        if not self.test:
+            response = update_request.execute()
+        else:
+            print("Would have executed, but currently in test mode")
 
     def delete_playlist_item(self):
         return None

@@ -19,6 +19,10 @@ flags = {
     "waiting": {
         "shorthand": "w",
         "help": ""
+    },
+    "test": {
+        "shorthand": "t",
+        "help": "Test mode"
     }
 }
 
@@ -41,6 +45,7 @@ for flag in sorted(flags):
 
 args = vars(parser.parse_args())
 modify_ranks = []
+args['test'] = True
 args['f1'] = True
 args['primary'] = True
 if args['all']:
@@ -51,7 +56,7 @@ for rank in ['f1', 'primary', 'secondary', 'waiting']:
         modify_ranks.append(rank)
 
 for rank in modify_ranks:
-    rank_playlist = YoutubePlaylist(rank)
+    rank_playlist = YoutubePlaylist(rank, test=args['test'])
     channels = rank_playlist.get_ordered_channels()
     videos = rank_playlist.get_items()
     for vid_id in videos:
