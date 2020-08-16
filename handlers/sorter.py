@@ -4,38 +4,37 @@ import threading
 
 
 class YoutubePlaylist(threading.Thread):
-    def __init__(self, name, id=None, queue_id=None, **kwargs):
+    def __init__(self, name, playlist_type, playlist_id=None, **kwargs):
         # Expected kwargs:
         # - name
         # - id (optional)
 
         super().__init__()
         self.ranks = ranks.RanksHandler()
+        self.config = utilities.ConfigHandler()
         self.client = client.YoutubeClientHandler().get_client()
         self.name = name
 
         # Sets playlist ID to what is submitted as a kwarg.
         # If no ID is set in kwarg, look up playlist ID by name in ranks.json.
         # If no ID is present in ranks.json, throw an error.
-        self.id = id
-        self.queue_id = queue_id
-        if self.id is None and self.name in self.ranks.playlists:
-            self.id = self.ranks.playlists[self.name]
+        self.id = playlist_id
+        self.types = {
+            'primary': self.ranks.playlists,
+            'backlog': self.ranks.backlogs,
+            'queue': self.ranks.queues
+        }
+        if self.id is None and self.name in self.types[playlist_type]:
+            self.id = self.types[playlist_type][self.name]
         if self.id is None:
             raise ValueError("Invalid playlist '%s'; no playlist ID supplied" % self.name)
-
-        if self.queue_id is None and self.name in self.ranks.queues:
-            self.queue_id = self.ranks.queues[self.name]
-        if self.queue_id is None:
-            raise ValueError("Invalid playlist '%s'; no queue playlist ID supplied" % self.name)
 
         # Resources to use internally
         self.ordered_channels = []
         self.videos = []
         self.queue = []
-        self.deleted_items_queue = []
-        self.backlog = []
-        self.test = kwargs['test']
+        self.playlist_items_to_change = {}
+        self.test = kwargs['test'] if 'test' in kwargs else False
 
     def get_items(self, id=None):
         assign_self_videos = True if id is None else False
@@ -67,7 +66,7 @@ class YoutubePlaylist(threading.Thread):
 
         id_list = ",".join(vid_ids)
         kwargs = {
-            "part": "snippet",
+            "part": "snippet,contentDetails",
             "id": id_list,
             "maxResults": 50
         }
@@ -88,7 +87,7 @@ class YoutubePlaylist(threading.Thread):
             self.videos = vid_data
         return vid_data
 
-    def get_ordered_channels(self):
+    def get_ordered_channels(self, tier_name=None):
         def add_subtier_channels(playlist_name, tier_data):
             subtier_channels = []
             tier = tier_data['tier']
@@ -113,11 +112,12 @@ class YoutubePlaylist(threading.Thread):
         channel_names = []
         for tier in handler.ranks:
             channel_names += add_subtier_channels(
-                playlist_name=self.name,
+                playlist_name=self.name if tier_name is None else tier_name,
                 tier_data=tier
             )
         channels = []
         for channel_name in channel_names:
+            print(channel_name)
             if channel_name in handler.subscriptions:
                 channel_details = handler.subscriptions[channel_name]
                 channel_id = channel_details['id']
@@ -127,7 +127,6 @@ class YoutubePlaylist(threading.Thread):
                         'id': channel_id
                     }
                 )
-
         return channels
 
     def get_channel_lists(self):
@@ -138,11 +137,6 @@ class YoutubePlaylist(threading.Thread):
             channel_videos[channel['id']] = []
 
         return channel_videos
-
-    def fetch_queue(self):
-        self.queue = self.get_items(id=self.queue_id)
-
-        return self.queue
 
     def sort(self, videos):
         channels = self.get_ordered_channels()
@@ -166,6 +160,43 @@ class YoutubePlaylist(threading.Thread):
                 index += 1
 
         return video_dict
+
+    def sort_playlist(self, import_queue=False):
+        total = deepcopy(self.videos)
+        total_sorted = self.sort(total)
+        playlist_items_to_change = {}
+
+        for vid_id in sorted(total_sorted, key=lambda x: total_sorted[x]['playlist_data']['snippet']['position']):
+            new_pos = total_sorted[vid_id]['playlist_data']['snippet']['position']
+            vid_data = self.videos[vid_id] if vid_id not in self.queue else self.queue[vid_id]
+            title = vid_data['vid_data']['snippet']['title']
+            if vid_id in self.queue:
+                vid_data = self.queue[vid_id]
+                vid_data['playlist_data']['snippet']['destinationPlaylistId'] = self.id
+                vid_data['playlist_data']['snippet']['position'] = new_pos
+                playlist_items_to_change[vid_id] = deepcopy(vid_data)
+                self.videos = deepcopy(self.modify_pos(deepcopy(self.videos), vid_id, title, new_pos, True))
+            else:
+                old_pos = vid_data['playlist_data']['snippet']['position']
+                total_sorted[vid_id]['playlist_data']['snippet']['oldPosition'] = old_pos
+                if new_pos != old_pos:
+                    playlist_items_to_change[vid_id] = deepcopy(total_sorted[vid_id])
+                    self.videos = deepcopy(self.modify_pos(deepcopy(self.videos), vid_id, title, new_pos))
+
+        self.playlist_items_to_change = deepcopy(playlist_items_to_change)
+
+        return total_sorted
+
+    def commit_sort(self):
+        playlist_items = self.playlist_items_to_change
+        for vid_id in sorted(playlist_items, key=lambda x: playlist_items[x]['playlist_data']['snippet']['position']):
+            vid_data = playlist_items[vid_id]
+            pos = vid_data['playlist_data']['snippet']['position']
+
+            if 'destinationPlaylistId' in vid_data['playlist_data']['snippet']:
+                self.transfer_playlist_item(vid_data=vid_data, vid_id=vid_id, old_playlist='queue', position=pos)
+            else:
+                self.update_playlist_item_position(vid_data=vid_data, vid_id=vid_id, position=pos)
 
     def modify_pos(self, videos, video_id, title, new_pos, add=False):
         new_videolist = deepcopy(videos)
@@ -193,51 +224,6 @@ class YoutubePlaylist(threading.Thread):
 
         return new_videolist
 
-    def sort_playlist(self, import_queue=False):
-        total = deepcopy(self.videos)
-        total_sorted = self.sort(total)
-        playlist_items_to_change = {}
-        if import_queue:
-            if len(self.queue) == 0:
-                self.fetch_queue()
-            total.update(deepcopy(self.queue))
-            total_sorted = self.sort(total)
-
-        for vid_id in sorted(total_sorted, key=lambda x: total_sorted[x]['playlist_data']['snippet']['position']):
-            new_pos = total_sorted[vid_id]['playlist_data']['snippet']['position']
-            vid_data = self.videos[vid_id] if vid_id not in self.queue else self.queue[vid_id]
-            title = vid_data['vid_data']['snippet']['title']
-            if vid_id in self.queue:
-                vid_data = self.queue[vid_id]
-                vid_data['playlist_data']['snippet']['destinationPlaylistId'] = self.id
-                vid_data['playlist_data']['snippet']['position'] = new_pos
-                playlist_items_to_change[vid_id] = deepcopy(vid_data)
-                self.videos = deepcopy(self.modify_pos(deepcopy(self.videos), vid_id, title, new_pos, True))
-            else:
-                old_pos = vid_data['playlist_data']['snippet']['position']
-                total_sorted[vid_id]['playlist_data']['snippet']['oldPosition'] = old_pos
-                if new_pos != old_pos:
-                    playlist_items_to_change[vid_id] = deepcopy(total_sorted[vid_id])
-                    self.videos = deepcopy(self.modify_pos(deepcopy(self.videos), vid_id, title, new_pos))
-
-        for vid_id in sorted(total_sorted, key=lambda x: total_sorted[x]['playlist_data']['snippet']['position']):
-            vid_data = total_sorted[vid_id]
-            channel = vid_data['vid_data']['snippet']['channelTitle']
-            title = vid_data['vid_data']['snippet']['title']
-            position = vid_data['playlist_data']['snippet']['position']
-            print("%i) %s: %s" % (position, channel, title))
-
-        for vid_id in sorted(playlist_items_to_change, key=lambda x: playlist_items_to_change[x]['playlist_data']['snippet']['position']):
-            vid_data = playlist_items_to_change[vid_id]
-            pos = vid_data['playlist_data']['snippet']['position']
-
-            if 'destinationPlaylistId' in vid_data['playlist_data']['snippet']:
-                self.transfer_playlist_item(vid_data=vid_data, vid_id=vid_id, old_playlist='queue', position=pos)
-            else:
-                self.update_playlist_item_position(vid_data=vid_data, vid_id=vid_id, position=pos)
-
-        return total_sorted
-
     def transfer_playlist_item(self, vid_data, vid_id, old_playlist, position=None):
         channel = vid_data['vid_data']['snippet']['channelTitle']
         title = vid_data['vid_data']['snippet']['title']
@@ -262,6 +248,11 @@ class YoutubePlaylist(threading.Thread):
         if not self.test:
             insert_response = insert_request.execute()
             delete_response = delete_request.execute()
+
+            return {
+                'insert_response': insert_response,
+                'delete_response': delete_response
+            }
         else:
             print("Would have executed, but currently in test mode")
 
@@ -288,13 +279,157 @@ class YoutubePlaylist(threading.Thread):
         update_request = self.client.playlistItems().update(part="snippet", body=body)
         if not self.test:
             response = update_request.execute()
+            return response
         else:
             print("Would have executed, but currently in test mode")
 
-    def delete_playlist_item(self):
-        return None
+    def delete_playlist_item(self, id):
+        delete_request = self.client.playlistItems().delete(id)
+        if not self.test:
+            delete_response = delete_request.execute()
+            return delete_response
+        else:
+            print("Would have executed, but currently in test mode")
 
     def run(self):
+        return None
+
+
+class PrimaryPlaylist(YoutubePlaylist):
+    def __init__(self, name, playlist_id=None, queue_id=None, backlog_id=None, backlog_source=None, **kwargs):
+        super().__init__(name, 'primary', playlist_id, **kwargs)
+
+        self.queue_id = queue_id
+        self.backlog_id = backlog_id
+        if self.queue_id is None and self.name in self.ranks.queues:
+            self.queue_id = self.ranks.queues[self.name]
+        if self.queue_id is None:
+            raise ValueError("Invalid playlist '%s'; no queue playlist ID supplied" % self.name)
+
+        if self.backlog_id is None and self.name in self.ranks.backlogs:
+            self.backlog_id = self.ranks.backlogs[self.name]
+        if self.backlog_id is None:
+            raise ValueError("Invalid playlist '%s'; no backlog playlist ID supplied" % self.name)
+
+        self.backlog = BacklogPlaylist(
+            name="primary",
+            parent_tier_name=name,
+            backlog_source=backlog_source,
+            **kwargs
+        )
+
+    def fetch_queue(self):
+        self.queue = self.get_items(id=self.queue_id)
+
+        return self.queue
+
+    def get_video_duration(self, vid_data):
+        duration = vid_data['vid_data']['contentDetails']['duration'].replace('P', '').replace('T', '')
+        days = 0
+        hours = 0
+        minutes = 0
+        seconds = 0
+        if 'D' in duration:
+            days_list = duration.split('D')
+            hours = days * 24
+            duration = days_list[1]
+        if 'H' in duration:
+            hours_list = duration.split('H')
+            hours = hours + int(hours_list[0])
+            minutes = hours * 60
+            duration = hours_list[1]
+        if 'M' in duration:
+            minutes_list = duration.split('M')
+            minutes = minutes + int(minutes_list[0])
+            seconds = minutes * 60
+            duration = minutes_list[1]
+        if 'S' in duration:
+            seconds_list = duration.split('S')
+            seconds = seconds + int(seconds_list[0])
+
+        return seconds
+
+    def sort_playlist(self, import_queue=False):
+        config = utilities.ConfigHandler()
+        max_duration = config.variables['VIDEO_MAX_DURATION']['MINUTES']*60 + config.variables['VIDEO_MAX_DURATION']['HOURS']*3600
+        playlist_max_length = self.config.variables['AUTOLIST_MAX_LENGTH']
+        total = deepcopy(self.videos)
+        total_sorted = self.sort(total)
+        if len(total_sorted) > playlist_max_length:
+            total_sorted = self.overflow_to_backlog(total_sorted, playlist_max_length)
+
+        playlist_items_to_change = {}
+        if import_queue:
+            if len(self.queue) == 0:
+                self.fetch_queue()
+            total.update(deepcopy(self.queue))
+            total_sorted = self.sort(total)
+
+        for vid_id in sorted(total_sorted, key=lambda x: total_sorted[x]['playlist_data']['snippet']['position']):
+            vid_data = total_sorted[vid_id]
+            duration = self.get_video_duration(vid_data)
+            if duration <= max_duration:
+                new_pos = total_sorted[vid_id]['playlist_data']['snippet']['position']
+                vid_data = self.videos[vid_id] if vid_id not in self.queue else self.queue[vid_id]
+                title = vid_data['vid_data']['snippet']['title']
+                if vid_id in self.queue:
+                    vid_data = self.queue[vid_id]
+                    vid_data['playlist_data']['snippet']['destinationPlaylistId'] = self.id
+                    vid_data['playlist_data']['snippet']['position'] = new_pos
+                    playlist_items_to_change[vid_id] = deepcopy(vid_data)
+                    self.videos = deepcopy(self.modify_pos(deepcopy(self.videos), vid_id, title, new_pos, True))
+                else:
+                    old_pos = vid_data['playlist_data']['snippet']['position']
+                    total_sorted[vid_id]['playlist_data']['snippet']['oldPosition'] = old_pos
+                    if new_pos != old_pos:
+                        playlist_items_to_change[vid_id] = deepcopy(total_sorted[vid_id])
+                        self.videos = deepcopy(self.modify_pos(deepcopy(self.videos), vid_id, title, new_pos))
+
+        for vid_id in sorted(playlist_items_to_change, key=lambda x: playlist_items_to_change[x]['playlist_data']['snippet']['position']):
+            vid_data = playlist_items_to_change[vid_id]
+            pos = vid_data['playlist_data']['snippet']['position']
+
+            if 'destinationPlaylistId' in vid_data['playlist_data']['snippet']:
+                self.transfer_playlist_item(vid_data=vid_data, vid_id=vid_id, old_playlist='queue', position=pos)
+            else:
+                self.update_playlist_item_position(vid_data=vid_data, vid_id=vid_id, position=pos)
+
+        return total_sorted
+
+    def get_backlog(self, num):
+        self.backlog = self.backlog.sort_playlist()
+        return None
+
+    def populate_backlog(self):
+        return None
+
+    def overflow_to_backlog(self, total_sorted, max_length):
+        trimmed_sorted = total_sorted
+        overflow = {}
+        for vid_id in sorted(total_sorted, key=lambda x: total_sorted[x]['playlist_data']['snippet']['position']):
+            position = total_sorted[vid_id]['playlist_data']['snippet']['position']
+            if position > max_length:
+                overflow[vid_id] = deepcopy(total_sorted[vid_id])
+            else:
+                trimmed_sorted[vid_id] = deepcopy(total_sorted[vid_id])
+
+        return trimmed_sorted
+
+
+class BacklogPlaylist(YoutubePlaylist):
+    def __init__(self, name, playlist_id=None, backlog_source=None, **kwargs):
+        super().__init__(name, 'backlog', playlist_id, **kwargs)
+
+        self.backlog_source_name = backlog_source
+        if self.id is None and self.name in self.types['backlog']:
+            self.id = self.types['backlog'][self.name]
+        if self.id is None:
+            raise ValueError("Invalid playlist '%s'; no backlog ID supplied" % self.name)
+
+    def fetch_num_items(self, num):
+        if self.backlog_source_name is not None:
+            backlog_sorted_channels = self.get_ordered_channels(tier_name=self.backlog_source_name)
+        parent_sorted_channels = self.get_ordered_channels(tier_name=self.name)
         return None
 
 
@@ -365,7 +500,7 @@ class SortHandler:
         self.tier_playlists = {}
         for tier_name in self.tier_playlist_ids:
             playlist_id = self.tier_playlist_ids[tier_name]
-            self.tier_playlists[tier_name] = YoutubePlaylist(id=playlist_id)
+            self.tier_playlists[tier_name] = YoutubePlaylist(playlist_id=playlist_id)
 
         return self.tier_playlists
 

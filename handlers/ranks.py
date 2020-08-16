@@ -79,6 +79,7 @@ class RanksHandler():
             self.filtered_channels.append(self.filtered['channels'][channel_name])
         self.playlists = self.data['playlist_ids']
         self.queues = self.data['queues']
+        self.backlogs = self.data['backlogs']
         for tier in self.config.variables['TIER_PLAYLISTS']:
             self.playlists[tier] = self.config.variables['TIER_PLAYLISTS'][tier]
         self.rank_data = []
