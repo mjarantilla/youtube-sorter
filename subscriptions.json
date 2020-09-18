@@ -220,10 +220,6 @@
       "id": "UCF8e8zKZ_yk7cL9DvvWGSEw",
       "uploads": "UUF8e8zKZ_yk7cL9DvvWGSEw"
     },
-    "Endurance Racing - Topic": {
-      "id": "UClwhCQVLke4rTN-4PHU28rA",
-      "uploads": "UUlwhCQVLke4rTN-4PHU28rA"
-    },
     "EnduranceGTSeries": {
       "id": "UCBMwx_dASOxf-2R1dmCPdig",
       "uploads": "UUBMwx_dASOxf-2R1dmCPdig"
@@ -352,13 +348,13 @@
       "id": "UCdooVVbywcoCa4itQrn9F8w",
       "uploads": "UUdooVVbywcoCa4itQrn9F8w"
     },
+    "Isaac Arthur": {
+      "id": "UCZFipeZtQM5CKUjx6grh54g",
+      "uploads": "UUZFipeZtQM5CKUjx6grh54g"
+    },
     "It's Okay To Be Smart": {
       "id": "UCH4BNI0-FOK2dMXoFtViWHw",
       "uploads": "UUH4BNI0-FOK2dMXoFtViWHw"
-    },
-    "JL N": {
-      "id": "UCeBisqdm9InpTqGclnYZQ0w",
-      "uploads": "UUeBisqdm9InpTqGclnYZQ0w"
     },
     "Jaiden Animations": {
       "id": "UCGwu0nbY2wSkW8N-cghnLpA",
@@ -375,6 +371,10 @@
     "James Hoffmann": {
       "id": "UCMb0O2CdPBNi-QqPk5T3gsQ",
       "uploads": "UUMb0O2CdPBNi-QqPk5T3gsQ"
+    },
+    "Jean-Louis Nguyen": {
+      "id": "UCeBisqdm9InpTqGclnYZQ0w",
+      "uploads": "UUeBisqdm9InpTqGclnYZQ0w"
     },
     "Journey to the Microcosmos": {
       "id": "UCBbnbBWJtwsf0jLGUwX5Q3g",
@@ -400,13 +400,17 @@
       "id": "UCFbtcTaMFnOAP0pFO1L8hVw",
       "uploads": "UUFbtcTaMFnOAP0pFO1L8hVw"
     },
-    "LARPs: The Series": {
+    "LARPs": {
       "id": "UCPkHlo8qsFWEiMhlHRIcLyQ",
       "uploads": "UUPkHlo8qsFWEiMhlHRIcLyQ"
     },
     "Linus Tech Tips": {
       "id": "UCXuqSBlHAE6Xw-yeJA0Tunw",
       "uploads": "UUXuqSBlHAE6Xw-yeJA0Tunw"
+    },
+    "Lost Legion": {
+      "id": "UC5RzeTAGL88yeDn9kqs6H_g",
+      "uploads": "UU5RzeTAGL88yeDn9kqs6H_g"
     },
     "Lucas the Spider": {
       "id": "UCNqRS1gSJFMNPVwye1gyI_g",
@@ -471,6 +475,10 @@
     "MonarchsFactory": {
       "id": "UChSBq3h26QNYGBmi2yQPHKA",
       "uploads": "UUhSBq3h26QNYGBmi2yQPHKA"
+    },
+    "MorganDrinksCoffee": {
+      "id": "UCEkuogE57xac9EPZ3EZwWIg",
+      "uploads": "UUEkuogE57xac9EPZ3EZwWIg"
     },
     "MotoManTV": {
       "id": "UCZgfBoK6nAiGaUclljtPYrw",
@@ -720,6 +728,10 @@
       "id": "UCFAbxaVl6PJMwbMMXX9ZcNw",
       "uploads": "UUFAbxaVl6PJMwbMMXX9ZcNw"
     },
+    "Storied": {
+      "id": "UCO6nDCimkF79NZRRb8YiDcA",
+      "uploads": "UUO6nDCimkF79NZRRb8YiDcA"
+    },
     "Stories": {
       "id": "UCJsSEDFFnMFvW9JWU6XUn0Q",
       "uploads": "UUJsSEDFFnMFvW9JWU6XUn0Q"
@@ -759,6 +771,10 @@
     "Techquickie": {
       "id": "UC0vBXGSyV14uvJ4hECDOl0Q",
       "uploads": "UU0vBXGSyV14uvJ4hECDOl0Q"
+    },
+    "Teddy Baldassarre": {
+      "id": "UCLGp7H4XuzA9TLJ0L4PUx8w",
+      "uploads": "UULGp7H4XuzA9TLJ0L4PUx8w"
     },
     "TestTube 101": {
       "id": "UCvvzRsHJBXkMeFybWFnEjNg",
@@ -807,6 +823,10 @@
     "TheStraightPipes": {
       "id": "UC86SBFIAgnYL3ll2ZDgmsuA",
       "uploads": "UU86SBFIAgnYL3ll2ZDgmsuA"
+    },
+    "TheUrbanPrepper": {
+      "id": "UCF6zi1Q3oUknWkAD_LcRVjw",
+      "uploads": "UUF6zi1Q3oUknWkAD_LcRVjw"
     },
     "ThomsenMotorsport": {
       "id": "UCj1P9eBlPZKyT2k9pFEMBjA",
@@ -989,7 +1009,6 @@
     "ERB",
     "EVO",
     "Edmunds",
-    "Endurance Racing - Topic",
     "EnduranceGTSeries",
     "Engineering Explained",
     "Every Frame a Painting",
@@ -1022,20 +1041,22 @@
     "ISSIMI Official",
     "Improv Everywhere",
     "In The Making",
+    "Isaac Arthur",
     "It's Okay To Be Smart",
-    "JL N",
     "Jaiden Animations",
     "Jake Roper",
     "James Allen on F1",
     "James Hoffmann",
+    "Jean-Louis Nguyen",
     "Journey to the Microcosmos",
     "Julia Wilde",
     "KYLE.ENGINEERS",
     "Kelley Blue Book",
     "Kurzgesagt \u2013 In a Nutshell",
     "Kyle Hill",
-    "LARPs: The Series",
+    "LARPs",
     "Linus Tech Tips",
+    "Lost Legion",
     "Lucas the Spider",
     "Mark Rober",
     "Marques Brownlee",
@@ -1052,6 +1073,7 @@
     "Mitch Hutts",
     "Modern History TV",
     "MonarchsFactory",
+    "MorganDrinksCoffee",
     "MotoManTV",
     "Motor Sport",
     "NASA Jet Propulsion Laboratory",
@@ -1114,6 +1136,7 @@
     "SpaceX",
     "Star Wars",
     "StoneAgeMan",
+    "Storied",
     "Stories",
     "Stuff You Should Know - HowStuffWorks",
     "Super Panic Frenzy",
@@ -1124,6 +1147,7 @@
     "Team Unicorn",
     "TechLinked",
     "Techquickie",
+    "Teddy Baldassarre",
     "TestTube 101",
     "The Beauty Of",
     "The Film Theorists",
@@ -1136,6 +1160,7 @@
     "The Vintage Space",
     "TheOdd1sOut",
     "TheStraightPipes",
+    "TheUrbanPrepper",
     "ThomsenMotorsport",
     "Thought Caf\u00e9",
     "Tiffany Baze",
