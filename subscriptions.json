@@ -68,13 +68,13 @@
       "id": "UCxuksozHJD_f1w9nVa6UhAw",
       "uploads": "UUxuksozHJD_f1w9nVa6UhAw"
     },
+    "Babish Culinary Universe": {
+      "id": "UCJHA_jMfCvEnv-3kRjTCQXw",
+      "uploads": "UUJHA_jMfCvEnv-3kRjTCQXw"
+    },
     "Because Science": {
       "id": "UCvG04Y09q0HExnIjdgaqcDQ",
       "uploads": "UUvG04Y09q0HExnIjdgaqcDQ"
-    },
-    "Binging with Babish": {
-      "id": "UCJHA_jMfCvEnv-3kRjTCQXw",
-      "uploads": "UUJHA_jMfCvEnv-3kRjTCQXw"
     },
     "Biographics": {
       "id": "UClnDI2sdehVm1zm_LmUHsjQ",
@@ -164,11 +164,7 @@
       "id": "UClq42foiSgl7sSpLupnugGA",
       "uploads": "UUlq42foiSgl7sSpLupnugGA"
     },
-    "D&D Beyond": {
-      "id": "UCPy-338BEVgDkQade0qJmkw",
-      "uploads": "UUPy-338BEVgDkQade0qJmkw"
-    },
-    "DPReview": {
+    "DPReview TV": {
       "id": "UCqP1gIWh2SM3lRXf373gMNQ",
       "uploads": "UUqP1gIWh2SM3lRXf373gMNQ"
     },
@@ -235,6 +231,10 @@
     "Everyday Astronaut": {
       "id": "UC6uKrU_WqJ1R2HMTY3LIx5Q",
       "uploads": "UU6uKrU_WqJ1R2HMTY3LIx5Q"
+    },
+    "Exploring Alternatives": {
+      "id": "UC8EQAfueDGNeqb1ALm0LjHA",
+      "uploads": "UU8EQAfueDGNeqb1ALm0LjHA"
     },
     "Explorium": {
       "id": "UCkcZwv0Zj4oZQ3gkRrlibRA",
@@ -752,13 +752,13 @@
       "id": "UCHa1nCaL35Gng9Oq3gmJxrg",
       "uploads": "UUHa1nCaL35Gng9Oq3gmJxrg"
     },
+    "TastingHistory": {
+      "id": "UCsaGKqPZnGp_7N80hcHySGQ",
+      "uploads": "UUsaGKqPZnGp_7N80hcHySGQ"
+    },
     "Team Unicorn": {
       "id": "UC571nE1SboPn6m6aDO13-DQ",
       "uploads": "UU571nE1SboPn6m6aDO13-DQ"
-    },
-    "TechLinked": {
-      "id": "UCeeFfhMcJa1kjtfZAGskOCA",
-      "uploads": "UUeeFfhMcJa1kjtfZAGskOCA"
     },
     "Techquickie": {
       "id": "UC0vBXGSyV14uvJ4hECDOl0Q",
@@ -787,6 +787,10 @@
     "The Hillywood Show": {
       "id": "UCuYRxRuTAtmeE2AiR5WWWHQ",
       "uploads": "UUuYRxRuTAtmeE2AiR5WWWHQ"
+    },
+    "The Modern Rogue": {
+      "id": "UC42VsoDtra5hMiXZSsD6eGg",
+      "uploads": "UU42VsoDtra5hMiXZSsD6eGg"
     },
     "The Network": {
       "id": "UCm9L2p8ow5sxONXELw3-_3A",
@@ -823,6 +827,10 @@
     "Thought Caf\u00e9": {
       "id": "UCwTZ-JLF5FQ3EmQ2nPaS-lg",
       "uploads": "UUwTZ-JLF5FQ3EmQ2nPaS-lg"
+    },
+    "Throttle House": {
+      "id": "UCyXiDU5qjfOPxgOPeFWGwKw",
+      "uploads": "UUyXiDU5qjfOPxgOPeFWGwKw"
     },
     "Tiffany Baze": {
       "id": "UCEngAKyn-q6tAB_arpzbXSg",
@@ -959,8 +967,8 @@
     "AutoTrader",
     "Automotive Aesthetic",
     "Autosport",
+    "Babish Culinary Universe",
     "Because Science",
-    "Binging with Babish",
     "Biographics",
     "Bizarre Beasts",
     "Blank on Blank",
@@ -983,8 +991,7 @@
     "CrashCourse",
     "Critical Role",
     "D!NG",
-    "D&D Beyond",
-    "DPReview",
+    "DPReview TV",
     "Daniel Floyd",
     "Daniel Ricciardo",
     "Deep Look",
@@ -1001,6 +1008,7 @@
     "Engineering Explained",
     "Every Frame a Painting",
     "Everyday Astronaut",
+    "Exploring Alternatives",
     "Explorium",
     "Extra Credits",
     "FORMULA 1",
@@ -1130,8 +1138,8 @@
     "THE DRIVE",
     "THE RACE",
     "TRYANGLE FILMS",
+    "TastingHistory",
     "Team Unicorn",
-    "TechLinked",
     "Techquickie",
     "TestTube 101",
     "The Beauty Of",
@@ -1139,6 +1147,7 @@
     "The Game Theorists",
     "The Good Stuff",
     "The Hillywood Show",
+    "The Modern Rogue",
     "The Network",
     "The Sound Traveler",
     "The Verge",
