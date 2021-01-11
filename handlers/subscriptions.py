@@ -15,7 +15,11 @@ class SubscriptionsHandler:
         self.old = {}
         self.client = YoutubeClientHandler().client
         self.raw = []
-        self.changes = {}
+        self.changes = {
+            'removed': [],
+            'renamed': [],
+            'added': []
+        }
 
     def fetch_subs(self):
         kwargs = {
@@ -45,15 +49,13 @@ class SubscriptionsHandler:
 
         return self.raw
 
-    def process_raw_subs_data(self):
+    def process_raw_subs_data(self, filtered_channels):
         channels_output = {
             'details': {},
             'titles': [],
             'changes': {},
             'unsubscribed': []
         }
-
-        filtered_channels = RanksHandler().filtered_channels
 
         if 'changes' in self.current:
             channels_output['changes'] = deepcopy(self.current['changes'])
@@ -78,10 +80,10 @@ class SubscriptionsHandler:
 
         return channels_output
 
-    def update_subscriptions(self):
+    def update_subscriptions(self, filtered_channels):
         delta = {}
         raw = self.fetch_subs()
-        processed = self.process_raw_subs_data()
+        processed = self.process_raw_subs_data(filtered_channels)
         delta = self.compare_details(self.current['details'], processed['details'])
 
         renamed_data = self.check_for_renames(
@@ -115,11 +117,9 @@ class SubscriptionsHandler:
         date_format = self.config.variables['EVENT_LOG_FORMAT']
         log_date = datetime.now()
         datetimestamp = log_date.strftime(date_format)
-        self.changes = {
-            'removed': removed,
-            'renamed': renamed,
-            'added': added
-        }
+        self.changes['removed'] += removed
+        self.changes['renamed'] += renamed
+        self.changes['added'] += added
         processed['changes'][datetimestamp] = self.changes
         for channel_name in removed:
             processed['unsubscribed'].append(channel_name)
@@ -127,7 +127,7 @@ class SubscriptionsHandler:
         self.old = deepcopy(self.current)
         self.current = processed
 
-    def update_files(self):
+    def write(self):
         date_format = self.config.variables['LOG_DATE_FORMAT']
         log_date = datetime.now()
         backup_suffix = log_date.strftime(date_format)

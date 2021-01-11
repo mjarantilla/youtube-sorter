@@ -101,7 +101,7 @@ def log(msg, silent=False):
     try:
         config = ConfigHandler()
         log_date_format = config.variables['LOG_DATE_FORMAT']
-        log_file = config.variables['LOG_FILE']
+        log_file = config.log_filepath
         log_date = datetime.now()
         log_date_formatted = log_date.strftime(log_date_format)
         renamed = False
