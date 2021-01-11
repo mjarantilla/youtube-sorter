@@ -1,6 +1,5 @@
-from handlers import client, playlist
+from handlers import client, playlist, utilities
 import json
-from handlers import utilities
 
 
 class Tier:
