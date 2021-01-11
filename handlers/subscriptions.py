@@ -1,18 +1,21 @@
 from handlers import playlist, utilities
 from handlers.utilities import ConfigHandler
 from handlers.client import YoutubeClientHandler
+from handlers.ranks import RanksHandler
 from copy import deepcopy
+from datetime import datetime
 import json
+import os
 
 class SubscriptionsHandler:
     def __init__(self, **kwargs):
-        config = ConfigHandler()
-        self.subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))
+        self.config = ConfigHandler()
+        self.subscriptions = json.load(open(self.config.subscriptions_filepath, mode='r'))
         self.current = deepcopy(self.subscriptions)
         self.old = {}
-        self.new = {}
         self.client = YoutubeClientHandler().client
         self.raw = []
+        self.changes = {}
 
     def fetch_subs(self):
         kwargs = {
@@ -44,32 +47,95 @@ class SubscriptionsHandler:
 
     def process_raw_subs_data(self):
         channels_output = {
-            'details': {}
+            'details': {},
+            'titles': [],
+            'changes': {},
+            'unsubscribed': []
         }
+
+        filtered_channels = RanksHandler().filtered_channels
+
+        if 'changes' in self.current:
+            channels_output['changes'] = deepcopy(self.current['changes'])
+        if 'unsubscribed' in self.current:
+            channels_output['unsubscribed'] = deepcopy(self.current['unsubscribed'])
 
         for item in self.raw:
             title = item['snippet']['title']
             id = item['snippet']['resourceId']['channelId']
             core = id[2:]
             uploads = 'UU' + id[2:]
-            channels_output['details'][title] = {
-                'title': title,
-                'id': id,
-                'uploads': uploads,
-                'core': core
-            }
+            if id not in filtered_channels:
+                channels_output['details'][title] = {
+                    'title': title,
+                    'id': id,
+                    'uploads': uploads,
+                    'core': core
+                }
+
+        for title in channels_output['details']:
+            channels_output['titles'].append(title)
 
         return channels_output
 
     def update_subscriptions(self):
+        delta = {}
         raw = self.fetch_subs()
         processed = self.process_raw_subs_data()
         delta = self.compare_details(self.current['details'], processed['details'])
 
-        renamed = self.check_for_renames(
+        renamed_data = self.check_for_renames(
             old=self.current['details'],
             new=processed['details']
         )
+        old_names = {}
+        for title in renamed_data:
+            item = renamed_data[title]
+            for old_name in item['previous_names']:
+                old_names[old_name] = title
+
+        removed = []
+        renamed = []
+        added = []
+        for title in delta['in_a']:
+            if title in old_names.keys():
+                renamed.append(
+                    {
+                        'old': title,
+                        'new': old_names[title]
+                    }
+                )
+            else:
+                removed.append(title)
+
+        for title in delta['in_b']:
+            if title not in renamed_data.keys():
+                added.append(title)
+
+        date_format = self.config.variables['EVENT_LOG_FORMAT']
+        log_date = datetime.now()
+        datetimestamp = log_date.strftime(date_format)
+        self.changes = {
+            'removed': removed,
+            'renamed': renamed,
+            'added': added
+        }
+        processed['changes'][datetimestamp] = self.changes
+        for channel_name in removed:
+            processed['unsubscribed'].append(channel_name)
+
+        self.old = deepcopy(self.current)
+        self.current = processed
+
+    def update_files(self):
+        backup_suffix = self.config.variables['LOG_DATE_FORMAT']
+        ranks_file = self.config.ranks_filepath
+        subs_file = self.config.subscriptions_filepath
+        subs_fp = open(subs_file, mode='w')
+
+        backup_subs_file = "{0}.{1}".format(self.config.subscriptions_filepath, backup_suffix)
+        os.rename(src=subs_file, dst=backup_subs_file)
+        utilities.print_json(self.current, fp=subs_fp)
 
     def compare_details(self, details_a, details_b):
         delta = {
