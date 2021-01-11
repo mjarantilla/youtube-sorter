@@ -1,7 +1,9 @@
 from handlers import client, playlist, utilities
-import json
+from datetime import datetime
+from copy import deepcopy
+import json, os
 
-
+logger = utilities.Logger()
 class Tier:
     def __init__(self, **kwargs):
         self.name = kwargs['tier']
@@ -9,11 +11,12 @@ class Tier:
         self.channels = kwargs['channels'] if 'channels' in kwargs else []
         self.channel_data = []
         self.separate = kwargs['separate'] if 'separate' in kwargs and kwargs['separate'] else False
-        self.playlist = kwargs['playlist'] if 'playlist' in kwargs else None
+        self.playlist_id = kwargs['playlist_id'] if 'playlist_id' in kwargs else None
         self.videos = []
         if 'subtiers' in kwargs:
             self.get_subtiers(**kwargs)
         self.get_channel_data()
+        self.json = {}
 
     def get_subtiers(self, **kwargs):
         self.subtiers = []
@@ -25,8 +28,8 @@ class Tier:
                 counter += 1
             if 'separate' not in subtier_kwargs:
                 subtier_kwargs['separate'] = self.separate
-            if 'playlist' not in subtier_kwargs and self.playlist is not None:
-                subtier_kwargs['playlist'] = self.playlist
+            if 'playlist' not in subtier_kwargs and self.playlist_id is not None:
+                subtier_kwargs['playlist'] = self.playlist_id
             self.subtiers.append(Tier(**subtier_kwargs))
 
     def assemble_video_list(self):
@@ -42,7 +45,8 @@ class Tier:
         subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))['details']
 
         for channel_name in self.channels:
-            self.channel_data.append(subscriptions[channel_name])
+            if channel_name in subscriptions:
+                self.channel_data.append(subscriptions[channel_name])
 
     def get_channels(self):
         channels = self.channels
@@ -55,6 +59,63 @@ class Tier:
 
     def print_rank(self):
         return None
+
+    def update_channels(self, changes):
+        logger.write("Updating {0} channels".format(self.name))
+        self.rename_channels(changes['renamed'])
+        self.remove_channels(changes['removed'])
+
+    def remove_channels(self, removed):
+        new_set = []
+        for channel in self.channels:
+            if channel not in removed:
+                new_set.append(channel)
+            else:
+                logger.write("Removing {0} from {1}".format(channel, self.name))
+
+        self.channels = new_set
+        for subtier in self.subtiers:
+            subtier.remove_channels(removed)
+
+    def rename_channels(self, renamed):
+        new_set = []
+        renamed_titles = {}
+        for title_pair in renamed:
+            renamed_titles[title_pair['old']] = title_pair['new']
+
+        for channel in self.channels:
+            if channel not in renamed_titles:
+                new_set.append(channel)
+            else:
+                logger.write("Renaming {0} to {1} in {2}".format(channel, renamed_titles[channel], self.name))
+                new_set.append(renamed_titles[channel])
+
+        self.channels = new_set
+
+        for subtier in self.subtiers:
+            subtier.rename_channels(renamed)
+
+        return None
+
+    def return_json(self):
+        self.json = {
+            'tier': self.name,
+            'channels': []
+        }
+
+        for channel in self.channels:
+            self.json['channels'].append(channel)
+
+        if len(self.subtiers) > 0:
+            self.json['subtiers'] = []
+        for subtier in self.subtiers:
+            subtier_json = subtier.return_json()
+            self.json['subtiers'].append(subtier_json)
+
+        if self.playlist_id is not None:
+            self.json['playlist_id'] = self.playlist_id
+
+        return self.json
 
 
 class RanksHandler():
@@ -86,6 +147,35 @@ class RanksHandler():
             return True
         else:
             return False
+
+    def update_channels(self, changes):
+        for tier in self.rank_data:
+            tier.update_channels(changes)
+
+        self.data['added'] = changes['added']
+
+    def get_json(self):
+        new_ranks_json = []
+        for tier in self.rank_data:
+            new_ranks_json.append(tier.return_json())
+
+        self.data['ranks'] = deepcopy(new_ranks_json)
+        return new_ranks_json
+
+    def write(self):
+        config = utilities.ConfigHandler()
+        filepath = config.ranks_filepath
+        date_format = config.variables['LOG_DATE_FORMAT']
+        log_date = datetime.now()
+        backup_suffix = log_date.strftime(date_format)
+
+        # Backup subscription file
+        backup_ranks_file = "{0}.{1}".format(filepath, backup_suffix)
+        os.rename(src=filepath, dst=backup_ranks_file)
+
+        # Write new subscription file
+        fp = open(filepath, mode='w')
+        utilities.print_json(self.data, fp=fp)
 
 
 class Autolister:

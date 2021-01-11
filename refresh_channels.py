@@ -36,9 +36,16 @@ def main():
 
 
 def fetch(args):
-    # ranks = RanksHandler()
+    ranks = RanksHandler()
+    ranks.define_ranks()
     subs = SubscriptionsHandler()
 
-    subs.update_subscriptions()
+    subs.update_subscriptions(filtered_channels=ranks.filtered_channels)
+    changes = subs.changes
+
+    ranks.update_channels(changes)
+    ranks.get_json()
+    subs.write()
+    ranks.write()
 
 main()
