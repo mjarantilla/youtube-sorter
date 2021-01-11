@@ -60,7 +60,7 @@ class Logger:
             shutil.copyfile(self.file, ".".join([self.file,file_suffix]))
             self.initialize()
 
-    def write(self, msg):
+    def write(self, msg=""):
         self.rename()
         message = LogMessage(
             msg=msg,

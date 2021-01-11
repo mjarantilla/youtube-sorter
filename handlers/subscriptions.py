@@ -7,6 +7,8 @@ from datetime import datetime
 import json
 import os
 
+logger = utilities.Logger()
+
 class SubscriptionsHandler:
     def __init__(self, **kwargs):
         self.config = ConfigHandler()
@@ -22,6 +24,7 @@ class SubscriptionsHandler:
         }
 
     def fetch_subs(self):
+        logger.write("Fetching subscriptions")
         kwargs = {
             'part': 'snippet',
             'channelId': 'UCWW8SlHj1Ax0iGE3uJGnNrw',
@@ -35,6 +38,7 @@ class SubscriptionsHandler:
         titles = {}
         page = 0
         while 'nextPageToken' in response:
+            logger.write("\tFetching page {0}".format(page))
             titles[page] = []
             request = self.client.subscriptions().list(**kwargs)
             response = request.execute()
@@ -44,12 +48,17 @@ class SubscriptionsHandler:
                 kwargs['pageToken'] = response['nextPageToken']
                 page_tokens.append(response['nextPageToken'])
             page += 1
+            logger.write("\tSubscriptions: {0}".format(len(results)))
 
         self.raw = results
+
+        logger.write("Total subscriptions: {0}".format(len(self.raw)))
+        logger.write()
 
         return self.raw
 
     def process_raw_subs_data(self, filtered_channels):
+        logger.write("Processing subscriptions")
         channels_output = {
             'details': {},
             'titles': [],
@@ -81,6 +90,7 @@ class SubscriptionsHandler:
         return channels_output
 
     def update_subscriptions(self, filtered_channels):
+        logger.write("Finding changes")
         delta = {}
         raw = self.fetch_subs()
         processed = self.process_raw_subs_data(filtered_channels)
@@ -126,6 +136,18 @@ class SubscriptionsHandler:
 
         self.old = deepcopy(self.current)
         self.current = processed
+        logger.write("Removed:")
+        for item in self.changes['removed']:
+            logger.write("- {0}".format(item))
+        logger.write()
+        logger.write("Renamed:")
+        for item in self.changes['renamed']:
+            logger.write("- {0}".format(item))
+        logger.write()
+        logger.write("Added:")
+        for item in self.changes['added']:
+            logger.write("- {0}".format(item))
+        logger.write()
 
     def write(self):
         date_format = self.config.variables['LOG_DATE_FORMAT']
