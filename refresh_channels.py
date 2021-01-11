@@ -41,4 +41,6 @@ def fetch(args):
 
     subs.update_subscriptions()
 
+    subs.update_files()
+
 main()

@@ -128,13 +128,17 @@ class SubscriptionsHandler:
         self.current = processed
 
     def update_files(self):
-        backup_suffix = self.config.variables['LOG_DATE_FORMAT']
-        ranks_file = self.config.ranks_filepath
+        date_format = self.config.variables['LOG_DATE_FORMAT']
+        log_date = datetime.now()
+        backup_suffix = log_date.strftime(date_format)
         subs_file = self.config.subscriptions_filepath
-        subs_fp = open(subs_file, mode='w')
 
+        # Backup subscription file
         backup_subs_file = "{0}.{1}".format(self.config.subscriptions_filepath, backup_suffix)
         os.rename(src=subs_file, dst=backup_subs_file)
+
+        # Write new subscription file
+        subs_fp = open(subs_file, mode='w')
         utilities.print_json(self.current, fp=subs_fp)
 
     def compare_details(self, details_a, details_b):
