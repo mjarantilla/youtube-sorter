@@ -16,7 +16,7 @@
   "PRIVATE_VIDEOS_FILE": "private.json",
   "TRANSFER_FILE": "transfer.json",
 
-  "AUTOLIST_MAX_LENGTH": 50,
+  "AUTOLIST_MAX_LENGTH": 100,
   "WATCH_LATER_ID": "PL8wvcc8NSIHJaQD2nSAe_hbCwrQbxwQKt",
   "XL_WATCH_LATER_ID": "PL8wvcc8NSIHLaAwrtUX7Nm5nbE9Fltsh9",
   "BACKLOG_ID": "PL8wvcc8NSIHIHFbnOfyXxHo2Q3UnlSpa4",
