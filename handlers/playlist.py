@@ -354,6 +354,8 @@ class QueueHandler:
                 threads.append(batch.copy())
                 batch = []
                 logger.write("Batch %i written" % len(threads))
+        threads.append(batch.copy())
+        logger.write("Batch %i written" % len(threads))
 
         batch_count = 0
         for batch in threads:
@@ -500,6 +502,8 @@ class ChannelScanner(threading.Thread):
             print(e.content)
             print(e.error_details)
             print(e.resp)
+            raise
+        except:
             raise
 
         return response
