@@ -599,18 +599,6 @@ def add_to_target_autolist(autolist, playlist_label, target_playlist_id, already
             if item['videoId'] not in already_added_ids:
                 label = ": ".join([channel_title, vid_title])
                 if item['sourcePlaylistId'] == target_playlist_id:
-                    # if item['position'] != pos:
-                    #     msg_list.append("\tUpdating position:")
-                    #     body = {
-                    #         'id': item['playlistItemId'],
-                    #         'snippet.playlistId': target_playlist_id,
-                    #         'snippet.resourceId.kind': 'youtube#video',
-                    #         'snippet.resourceId.videoId': item['videoId'],
-                    #         'snippet.position': pos
-                    #     }
-                    #     if not TEST:
-                    #         playlist_item_update_position(client, body, part='snippet')
-                    # else:
                     msg_list.append("\tRetaining position:")
                 else:
                     try:
@@ -624,7 +612,6 @@ def add_to_target_autolist(autolist, playlist_label, target_playlist_id, already
                         if not TEST:
                             response = playlist_items_insert(client, body, part='snippet')
                             body['id'] = response['id']
-                            # playlist_item_update_position(client, body, part='snippet')
                             playlist_items_delete(client,id=item['playlistItemId'])
                     except:
                         print_json(item)
@@ -637,7 +624,7 @@ def add_to_target_autolist(autolist, playlist_label, target_playlist_id, already
                 msg_list = msg_list + ["\tDeleting:", vid_title]
                 deleted.append(item)
                 if not TEST:
-                    playlist_items_delete(client,id=item['playlistItemId'])
+                    playlist_items_delete(client, id=item['playlistItemId'])
             log(" ".join(msg_list))
 
     return {
@@ -754,42 +741,8 @@ def remove_empty_kwargs(**kwargs):
 
 
 def execute(request_object):
-    has_result = False
-    wait_time = 0
-    retry_count = 0
     response = request_object.execute()
-    # print(response)
-    has_result = True
     return response
-    # while retry_count < 3 and not has_result:
-    #     try:
-    #         response = request_object.execute()
-    #         has_result = True
-    #         return response
-    #     except HttpError as e:
-    #         if e.resp.status in ERROR_CODES and retry_count < 3:
-    #             has_result = False
-    #             # log(json.loads(e.content.decode('utf-8'))['error']['message'])
-    #             if wait_time < 60:
-    #                 wait_time += 10
-    #             msg = " ".join(
-    #                 [
-    #                     "Waiting",
-    #                     str(wait_time),
-    #                     "seconds before retrying"
-    #                 ]
-    #             )
-    #             log(msg)
-    #             sleep(wait_time)
-    #             log("Retrying now...")
-    #             retry_count += 1
-    #             continue
-    #         else:
-    #             print("e.resp.status: %s" % str(e.resp.status))
-    #             print("e.content: %s" % e.content)
-    #             print("e.error.details: %s" % str(e.error_details))
-    #             print("e: %s" % str(e))
-    #             raise
 
 
 kwargs = {
