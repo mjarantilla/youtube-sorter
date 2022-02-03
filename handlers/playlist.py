@@ -315,10 +315,10 @@ class QueueHandler:
                     break
 
             if tier_name not in handler.queues:
-                logger.write("%s: default" % channel)
+                logger.write("- %s: default" % channel)
                 return handler.queues['queue']
             else:
-                logger.write("%s: %s" % (channel, tier_name))
+                logger.write("- %s: %s" % (channel, tier_name))
                 return handler.queues[tier_name]
 
         added_to_queue = []
@@ -354,6 +354,8 @@ class QueueHandler:
                 threads.append(batch.copy())
                 batch = []
                 logger.write("Batch %i written" % len(threads))
+        threads.append(batch.copy())
+        logger.write("Batch %i written" % len(threads))
 
         batch_count = 0
         for batch in threads:
@@ -500,6 +502,8 @@ class ChannelScanner(threading.Thread):
             print(e.content)
             print(e.error_details)
             print(e.resp)
+            raise
+        except:
             raise
 
         return response
