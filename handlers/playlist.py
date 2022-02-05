@@ -2,7 +2,7 @@ from handlers import client, utilities, ranks
 import json
 from time import sleep
 from datetime import datetime, timedelta
-from handlers.utilities import Logger
+from handlers.utilities import Logger, print_json
 import googleapiclient.errors
 import threading
 import copy
@@ -12,10 +12,10 @@ logger = Logger()
 
 class YoutubePlaylist:
     def __init__(self, **kwargs):
-        self.tier = kwargs['tier']
         self.id = kwargs['id']
         self.videos = []
         self.client = client.YoutubeClientHandler().get_client()
+        self.cache_filepath = kwargs['cache_filepath']
 
     def get_items(self):
         kwargs = {
@@ -33,6 +33,14 @@ class YoutubePlaylist:
             request = self.client.playlistItems().list(**kwargs)
             response = request.execute()
             self.videos = self.videos + response['items']
+
+    def write_cache(self, cache_filepath=None):
+        if cache_filepath is None:
+            cache_filepath = self.cache_filepath
+
+        cache_fp = open(cache_filepath, mode='w')
+        print_json(self.videos, fp=cache_fp)
+        cache_fp.close()
 
     def add_item(self, **kwargs):
         position = kwargs['position']
@@ -277,10 +285,12 @@ class RequestThreader(threading.Thread):
         self.response = youtube.execute(request)
 
 
-class QueueHandler:
+class QueueHandler(YoutubePlaylist):
     def __init__(self):
         config = utilities.ConfigHandler()
-        self.id = config.variables['QUEUE_ID']
+        super().__init__(
+            id=config.variables['QUEUE_ID']
+        )
         self.ranks = ranks.RanksHandler()
         self.subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))
         self.channel_details = self.subscriptions['details']
