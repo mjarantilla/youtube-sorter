@@ -4,6 +4,8 @@ from copy import deepcopy
 import json, os
 
 logger = utilities.Logger()
+
+
 class Tier:
     def __init__(self, **kwargs):
         self.name = kwargs['tier']
