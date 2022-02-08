@@ -42,5 +42,7 @@
     "6": "PL8wvcc8NSIHKevccqW-z5OH-ks-K2dDp7"
   },
   "FILLER_LENGTH": 10,
-  "FILLER_INDEX": "2"
+  "FILLER_INDEX": "2",
+
+  "CACHE_DIR": "/Users/mjaranti/git/youtube-sorter/cache"
 }
