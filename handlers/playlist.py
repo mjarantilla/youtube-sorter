@@ -16,10 +16,7 @@ class YoutubePlaylist:
         self.id = kwargs['id']
         self.videos = []
         self.client = client.YoutubeClientHandler().get_client()
-        self.cache_filepath = kwargs['cache_file']
         self.cache = VideoCache()
-        config = utilities.ConfigHandler()
-        self.video_metadata_cache_filepath = config.variables['VIDEO_METADATA_CACHE']
 
     def get_playlist_items(self):
         kwargs = {
