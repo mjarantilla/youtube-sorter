@@ -3,6 +3,7 @@ import json
 from time import sleep
 from datetime import datetime, timedelta
 from handlers.utilities import Logger, print_json
+from handlers.cache import VideoCache
 import googleapiclient.errors
 import threading
 import copy
@@ -15,9 +16,12 @@ class YoutubePlaylist:
         self.id = kwargs['id']
         self.videos = []
         self.client = client.YoutubeClientHandler().get_client()
-        self.cache_filepath = kwargs['cache_filepath']
+        self.cache_filepath = kwargs['cache_file']
+        self.cache = VideoCache()
+        config = utilities.ConfigHandler()
+        self.video_metadata_cache_filepath = config.variables['VIDEO_METADATA_CACHE']
 
-    def get_items(self):
+    def get_playlist_items(self):
         kwargs = {
             'playlistId': self.id,
             'maxResults': 50,
@@ -34,13 +38,13 @@ class YoutubePlaylist:
             response = request.execute()
             self.videos = self.videos + response['items']
 
-    def write_cache(self, cache_filepath=None):
-        if cache_filepath is None:
-            cache_filepath = self.cache_filepath
+    def update_video_cache(self):
+        for video in self.videos:
+            vid_data = self.videos[video]
+            vid_id = vid_data['contentDetails']['id']
+            self.cache.check_cache(vid_id, update=True)
 
-        cache_fp = open(cache_filepath, mode='w')
-        print_json(self.videos, fp=cache_fp)
-        cache_fp.close()
+        self.cache.write_cache()
 
     def add_item(self, **kwargs):
         position = kwargs['position']
