@@ -1,79 +1,153 @@
 from handlers.utilities import ConfigHandler, Logger, print_json
 from handlers.client import YoutubeClientHandler
 from handlers.cache import VideoCache
+from handlers.playlist import YoutubePlaylist
+from copy import deepcopy
 
 logger = Logger()
 
 
 class Video:
-    def __init__(self, id):
+    def __init__(self, id, **kwargs):
         """
 
         @param id:  The YouTube-assigned unique ID for the video
         """
-        self.config = ConfigHandler()
-        self.cache = VideoCache()
+        self.config = ConfigHandler() if 'config' not in kwargs else kwargs['config']
+        self.cache = VideoCache() if 'cache' not in kwargs else kwargs['cache']
+        self.client = YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
         self.id = id
-        self.data = None
-        self.title = None
-        self.snippet = None
-        self.contentDetails = None
-        self.playlist_membership = {}
-        self.current_playlist = None
-        self.get_video_data()
-
-    def get_video_data(self, update=True):
-        """
-        @param update: Boolean which tells the method to query the YouTube API for the video data is the video data
-                    doesn't exist in the cache file
-        @return:    None
-        """
-        self.data = self.cache.check_cache(self.id, update)
-        self.snippet = self.data['snippet']
-        self.contentDetails = self.data['contentDetails']
-        self.title = self.snippet['title']
-        self.playlist_membership = self.data['playlist_membership']
-        self.current_playlist = self.data['current_playlist']
-
-    def update_cache(self, update=True):
-        self.cache.check_cache(self.id, update)
-        self.cache.data[self.id]['playlist_membership'] = self.playlist_membership
-        self.cache.data[self.id]['current_playlist'] = self.current_playlist
+        self.data = self.cache.data[self.id]
+        self.title = self.data['snippet']['title']
 
     def add_to_playlist(self, playlist_id, position=0):
         """
+        Adds the video to the specified playlist at the specified position.
 
         @param playlist_id: The playlist ID of the destination playlist
-        @param position:    The position at which to add the video to
+        @param position:    The position at which to add the video to. Defaults to 0 (first position)
         @return:            The REST response
         """
-        client_handler = YoutubeClientHandler()
         response = None
-        properties = {
+        params = {
             'snippet.playlistId': playlist_id,
             'snippet.resourceId.kind': 'youtube#video',
             'snippet.resourceId.videoId': self.id,
             'snippet.position': position,
         }
 
-        if playlist_id not in self.playlist_membership:
-            playlist_item = client_handler.playlist_items_insert(properties, part='snippet')
-            self.playlist_membership[playlist_id] = {
+        if playlist_id not in self.data['playlist_membership']:
+            playlist_item = self.client.playlist_items_insert(params, part='snippet')
+            self.data['playlist_membership'][playlist_id] = {
                 'playlist_item_id': playlist_item['id'],
                 'position': position
             }
-            self.current_playlist = playlist_id
+            self.data['current_playlist'] = playlist_id
+            self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
+            logger.write("Added to playlist:")
         else:
-            if position != self.playlist_membership[playlist_id]['position']:
-                playlist_item = client_handler.playlist_item_update_position(properties, part='snippet')
-                self.playlist_membership[playlist_id] = {
+            if position != self.data['playlist_membership'][playlist_id]['position']:
+                playlist_item_id = self.data['playlist_membership'][playlist_id]['playlist_item_id']
+                params['id'] = playlist_item_id
+                playlist_item = self.client.playlist_item_update_position(params, part='snippet')
+                self.data['playlist_membership'][playlist_id] = {
                     'playlist_item_id': playlist_item['id'],
                     'position': position
                 }
-
-        self.update_cache()
+                self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
 
         return response
 
+    def check_playlist_membership(self, playlist_id):
+        """
+        Checks to see if the video is part of a given playlist as defined by the playlist_id. This method will always
+        query the Youtube API directly.
+
+        @param playlist_id:         The ID of the Youtube playlist to check for the video's membership
+        @return:                    True if the video is part of the given playlist. False if not.
+        """
+
+        playlist = YoutubePlaylist(id=playlist_id, cache=self.cache)
+        playlist.get_playlist_items()
+        instances = []
+        for item in playlist.videos:
+            if item['contentDetails']['videoId'] == self.id:
+                instances.append(item)
+        logger.write("%i instance(s) found" % len(instances))
+
+        if len(instances) > 0:
+            self.cache.add_playlist_membership(
+                vid_id=self.id,
+                playlist_id=instances[0]['snippet']['playlistId'],
+                playlist_item_id=instances[0]['id'],
+                position=instances[0]['snippet']['position']
+            )
+
+            return instances
+        else:
+            self.cache.remove_playlist_membership(self.id, instances[0]['id'])
+
+            return None
+
+    def remove_duplicates(self, playlist_id):
+        """
+        Checks the specified playlist for the video, and if there are multiple instances of the video, it will remove
+        all but the first
+
+        @param playlist_id:         The ID of the Youtube playlist to check for the video's membership
+        @return:                    True if the video is part of the given playlist. False if not.
+        """
+        instances = self.check_playlist_membership(playlist_id)
+        removed = 0
+        if len(instances) > 1:
+            logger.write("Removing %i duplicate(s)" % (len(instances) - 1))
+            while len(instances) > 1:
+                request = self.client.client.playlistItems().delete(id=instances[-1]['id'])
+                response = self.client.execute(request)
+                instances.pop()
+                removed += 1
+
+        logger.write("%i duplicate(s) removed" % removed)
+
     def remove_from_playlist(self, playlist_id):
-        return None
+        """
+        Removes the video from the specified playlist
+
+        @param playlist_id: The ID of the Youtube playlist to check for the video's membership
+        @return:            True if the video was part of a playlist and subsequently removed. False if not.
+        """
+        if self.check_playlist_membership(playlist_id):
+            playlist_item_id = self.data['playlist_membership'][playlist_id]['playlist_item_id']
+
+            params = {
+                'id': playlist_item_id
+            }
+            request = self.client.client.playlistItems().delete(**params)
+            response = self.client.execute(request)
+            self.cache.remove_playlist_membership(self.id, playlist_id)
+
+            logger.write("Removed from playlist: %s" % self.title)
+            if playlist_id == self.data['current_playlist']:
+                if len(self.data['playlist_membership']) > 0:
+                    key = self.data['playlist_membership'].keys()[0]
+                    self.data['current_playlist'] = self.data['playlist_membership'][key]
+                else:
+                    self.data['current_playlist'] = None
+
+            return response
+        else:
+            return None
+
+    def consolidate_playlist_membership(self, playlist_id):
+        """
+        This method will remove the video from all playlists it is in except one.
+
+        @param playlist_id: The ID of the Youtube playlist that the video will be a member of.
+                            The video will be removed from all other playlists
+        @return:            None
+        """
+        for playlist in self.data['playlist_membership']:
+            if playlist != playlist_id:
+                self.remove_from_playlist(playlist)
+            else:
+                self.check_playlist_membership(playlist_id)
