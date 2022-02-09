@@ -3,7 +3,6 @@ import json
 from time import sleep
 from datetime import datetime, timedelta
 from handlers.utilities import Logger, print_json
-from handlers.cache import VideoCache
 import googleapiclient.errors
 import threading
 import copy
@@ -15,27 +14,51 @@ class YoutubePlaylist:
     def __init__(self, **kwargs):
         self.id = kwargs['id']
         self.videos = []
-        self.client = client.YoutubeClientHandler().get_client()
-        self.cache = VideoCache()
+        self.client_handler = client.YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
+        self.cache = kwargs['cache']
+        self.title = self.get_playlist_title()
+
+    def get_playlist_title(self):
+        params = {
+            'id': self.id,
+            'part': 'snippet'
+        }
+        request = self.client_handler.client.playlists().list(**params)
+        response = self.client_handler.execute(request)
+        items = response['items']
+        result = {}
+        for item in items:
+            item_id = item['id']
+            if item_id == self.id:
+                result = item
+        title = result['snippet']['title']
+        logger.write("Fetched playlist title: %s" % title)
+
+        return title
 
     def get_playlist_items(self):
+        logger.write("Fetching playlist items for Playlist \"%s\"" % self.title)
+        page = 2
         kwargs = {
             'playlistId': self.id,
             'maxResults': 50,
             'part': "snippet,contentDetails,id"
         }
 
-        request = self.client.playlistItems().list(**kwargs)
-        response = request.execute()
+        request = self.client_handler.client.playlistItems().list(**kwargs)
+        response = self.client_handler.execute(request)
         self.videos = response['items']
 
         while 'nextPageToken' in response:
+            logger.write("Fetching page %i" % page)
             kwargs['pageToken'] = response['nextPageToken']
-            request = self.client.playlistItems().list(**kwargs)
-            response = request.execute()
+            request = self.client_handler.client.playlistItems().list(**kwargs)
+            response = self.client_handler.execute(request)
             self.videos = self.videos + response['items']
+            page += 1
 
     def update_video_cache(self):
+        logger.write("Updating local video cache with videos in YoutubePlaylist().videos")
         for video in self.videos:
             vid_data = self.videos[video]
             vid_id = vid_data['contentDetails']['id']

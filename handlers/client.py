@@ -5,9 +5,11 @@ import google_auth_oauthlib.flow
 import googleapiclient.discovery
 import googleapiclient.errors
 from google_auth_oauthlib import flow
-from handlers.utilities import ConfigHandler, print_json
+from handlers.utilities import ConfigHandler, print_json, Logger
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+
+logger = Logger()
 
 
 class YoutubeClientHandler:
@@ -61,6 +63,7 @@ class YoutubeClientHandler:
         return youtube
 
     def execute(self, request_object):
+        logger.write("Querying Youtube: %s %s" % (request_object.method, request_object.methodId))
         response = request_object.execute()
 
         return response
