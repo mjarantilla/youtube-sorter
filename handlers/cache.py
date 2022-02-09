@@ -175,45 +175,6 @@ class VideoCache(MapCache):
             logger.write(msg)
             return vid_data
 
-    def sync_local_with_yt(self, playlist_id):
-        """
-        This method will ensure that the local cache data reflects the current state of the specified playlist
-
-        @param playlist_id: The playlist to sync to the local cache
-        @return:
-        """
-
-        playlist = YoutubePlaylist(id=playlist_id, cache=self)
-        logger.write("Synchronizing local cache with Playlist \"%s\"" % playlist_id)
-        playlist.get_playlist_items()
-
-        playlist_videos = {}
-        for playlist_item in playlist.videos:
-            vid_id = playlist_item['contentDetails']['videoId']
-            playlist_videos[vid_id] = playlist_item
-
-        for vid_id in self.data:
-            vid_data = self.data[vid_id]
-            playlist_membership = vid_data['playlist_membership']
-            if vid_id in playlist_videos:
-                playlist_item_id = playlist_videos[vid_id]['id']
-                position = playlist_videos[vid_id]['snippet']['position']
-                self.add_playlist_membership(vid_id, playlist_id, playlist_item_id, position)
-            elif vid_id not in playlist_videos and playlist_id in playlist_membership:
-                self.remove_playlist_membership(vid_id, playlist_id)
-            playlist_videos.pop(vid_id)
-
-        logger.write("%i videos found in playlist that are not in cache" % len(playlist_videos))
-        for vid_id in playlist_videos:
-            playlist_item = playlist_videos[vid_id]
-            playlist_item_id = playlist_item['id']
-            position = playlist_item['snippet']['position']
-            title = playlist_item['snippet']['title']
-            logger.write("Adding to cache: %s" % title)
-            self.add_video(vid_id)
-            self.add_playlist_membership(vid_id, playlist_id, playlist_item_id, position)
-            logger.write()
-
 
 class PlaylistCache(ListCache):
     def __init__(self, file, playlist_id):

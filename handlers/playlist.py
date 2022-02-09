@@ -3,6 +3,7 @@ import json
 from time import sleep
 from datetime import datetime, timedelta
 from handlers.utilities import Logger, print_json
+from handlers.cache import VideoCache
 import googleapiclient.errors
 import threading
 import copy
@@ -11,14 +12,14 @@ logger = Logger()
 
 
 class YoutubePlaylist:
-    def __init__(self, **kwargs):
-        self.id = kwargs['id']
+    def __init__(self, id, **kwargs):
+        self.id = id
         self.videos = []
         self.client_handler = client.YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
-        self.cache = kwargs['cache']
-        self.title = self.get_playlist_title()
+        self.cache = VideoCache()
+        self.title = self._get_playlist_title()
 
-    def get_playlist_title(self):
+    def _get_playlist_title(self):
         params = {
             'id': self.id,
             'part': 'snippet'
@@ -35,6 +36,36 @@ class YoutubePlaylist:
         logger.write("Fetched playlist title: %s" % title)
 
         return title
+
+    def sync_local_with_yt(self):
+        logger.write("Synchronizing local cache with Playlist \"%s\"" % self.title)
+        self.get_playlist_items()
+        playlist_videos = {}
+        for playlist_item in self.videos:
+            vid_id = playlist_item['contentDetails']['videoId']
+            playlist_videos[vid_id] = playlist_item
+
+        for vid_id in self.cache.data:
+            vid_data = self.cache.data[vid_id]
+            playlist_membership = vid_data['playlist_membership']
+            if vid_id in playlist_videos:
+                playlist_item_id = playlist_videos[vid_id]['id']
+                position = playlist_videos[vid_id]['snippet']['position']
+                self.cache.add_playlist_membership(vid_id, self.id, playlist_item_id, position)
+            elif vid_id not in playlist_videos and self.id in playlist_membership:
+                self.cache.remove_playlist_membership(vid_id, self.id)
+            playlist_videos.pop(vid_id)
+
+        logger.write("%i videos found in playlist that are not in cache" % len(playlist_videos))
+        for vid_id in playlist_videos:
+            playlist_item = playlist_videos[vid_id]
+            playlist_item_id = playlist_item['id']
+            position = playlist_item['snippet']['position']
+            title = playlist_item['snippet']['title']
+            logger.write("Adding to cache: %s" % title)
+            self.cache.add_video(vid_id)
+            self.cache.add_playlist_membership(vid_id, self.id, playlist_item_id, position)
+            logger.write()
 
     def get_playlist_items(self):
         logger.write("Fetching playlist items for Playlist \"%s\"" % self.title)
@@ -61,8 +92,16 @@ class YoutubePlaylist:
         logger.write("Updating local video cache with videos in YoutubePlaylist().videos")
         for video in self.videos:
             vid_data = self.videos[video]
-            vid_id = vid_data['contentDetails']['id']
+            vid_id = vid_data['contentDetails']['videoId']
+            playlist_item_id = vid_data['id']
+            position = vid_data['snippet']['position']
             self.cache.check_cache(vid_id, update=True)
+            self.cache.add_playlist_membership(
+                vid_id=vid_id,
+                playlist_id=self.id,
+                playlist_item_id=playlist_item_id,
+                position=position
+            )
 
         self.cache.write_cache()
 
@@ -313,7 +352,7 @@ class QueueHandler(YoutubePlaylist):
     def __init__(self):
         config = utilities.ConfigHandler()
         super().__init__(
-            id=config.variables['QUEUE_ID']
+            id=config.variables['QUEUE_ID'],
         )
         self.ranks = ranks.RanksHandler()
         self.subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))
