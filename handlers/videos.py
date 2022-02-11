@@ -1,6 +1,5 @@
 from handlers.utilities import ConfigHandler, Logger, print_json
 from handlers.client import YoutubeClientHandler
-from handlers.cache import VideoCache
 from handlers.playlist import YoutubePlaylist
 from copy import deepcopy
 
@@ -8,16 +7,16 @@ logger = Logger()
 
 
 class Video:
-    def __init__(self, id, **kwargs):
+    def __init__(self, id, cache, **kwargs):
         """
 
         @param id:  The YouTube-assigned unique ID for the video
         """
         self.config = ConfigHandler() if 'config' not in kwargs else kwargs['config']
-        self.cache = VideoCache() if 'cache' not in kwargs else kwargs['cache']
+        self.cache = cache
         self.client = YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
         self.id = id
-        self.data = self.cache.data[self.id]
+        self.data = self.cache.check_cache(self.id, update=True)
         self.title = self.data['snippet']['title']
 
     def add_to_playlist(self, playlist_id, position=0):
