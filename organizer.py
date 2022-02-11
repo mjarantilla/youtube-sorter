@@ -36,7 +36,6 @@ def merge_lists(playlist_ids, tier, **kwargs):
     playlist_videos = {}
     for playlist_id in playlists:
         playlist_videos[playlist_id] = get_playlist_videos(playlists[playlist_id], cache=cache)
-    # private_videos_file = kwargs['private_videos_file']
     channel_list = get_tier_channels(tier)
     subscriptions = json.load(open("/Users/mjaranti/git/youtube-sorter/subscriptions.json", mode="r"))['details']
 
@@ -47,15 +46,6 @@ def merge_lists(playlist_ids, tier, **kwargs):
         channel_info = subscriptions[channel_title]
         channel_id = channel_info['id']
         channel_index[channel_id] = channel_title
-
-    # Load data about videos marked "private" on YouTube
-    # private_fp = open(private_videos_file, mode='r')
-    # private_vids_data = json.load(private_fp)
-    # private_videos = private_vids_data['private_videos']
-    # private_fp.close()
-    # private_fp = open(private_videos_file, mode='w')
-    # json.dump({'private_videos': private_videos}, fp=private_fp, separators=(',', ': '), indent=2, sort_keys=True)
-    # private_fp.close()
 
     logger.write()
     logger.write("Combining playlist videos")
@@ -90,10 +80,32 @@ def merge_lists(playlist_ids, tier, **kwargs):
     return combined_sorted
 
 
-def filter_invalid_videos():
+def filter_invalid_videos(video_list):
+    """
+    Filters videos that are too long or too short and videos that are "private" on YouTube
+
+    @param video_list: A list of Video() objects
+    @return:
+    """
+    min_duration = config.variables['VIDEO_MIN_DURATION']
     max_duration = config.variables['VIDEO_MAX_DURATION']
 
+    # Load data about videos marked "private" on YouTube
+    private_videos_file = config.variables['PRIVATE_VIDEOS_FILE']
+    private_fp = open(private_videos_file, mode='r')
+    private_vids_data = json.load(private_fp)
+    private_videos = private_vids_data['private_videos']
+    private_fp.close()
+    private_fp = open(private_videos_file, mode='w')
+    json.dump({'private_videos': private_videos}, fp=private_fp, separators=(',', ': '), indent=2, sort_keys=True)
+    private_fp.close()
+
+
 def sort_by_date(video_list):
+    """
+    @param video_list:  An unsorted list of Video() objects
+    @return:            A list of Video() objects sorted by date published
+    """
     logger.write("Sorting by date")
     date_map = {}
     for video in video_list:
@@ -107,17 +119,22 @@ def sort_by_date(video_list):
     return sorted_list
 
 
-def get_playlist_videos(playlist_handler, **kwargs):
+def get_playlist_videos(playlist_handler):
+    """
+
+    @param playlist_handler:    The YoutubePlaylist() object for the playlist to get the videos of
+    @return:                    Returns a list of Video() objects presumably ordered by their positions in the playlist
+    """
+
     playlist_handler.get_playlist_items()
 
     playlist_videos = []
     for playlist_item in playlist_handler.videos:
         vid_id = playlist_item['contentDetails']['videoId']
         vid_kwarg = {
-            'id': vid_id
+            'id': vid_id,
+            'cache': cache
         }
-        if 'cache' in kwargs:
-            vid_kwarg['cache'] = kwargs['cache']
         video = Video(**vid_kwarg)
         playlist_videos.append(video)
 
@@ -125,6 +142,12 @@ def get_playlist_videos(playlist_handler, **kwargs):
 
 
 def get_tier_channels(tier_name):
+    """
+    Fetches a list of channels for a given tier name
+
+    @param tier_name:   The name of the tier whose channels to fetch
+    @return:            Returns a list of channel names
+    """
     handler = RanksHandler()
     handler.define_ranks()
 
@@ -138,29 +161,40 @@ def get_tier_channels(tier_name):
     return channels
 
 
-def calculate_overflow(combined, max_length, min_length, max_filler=10, backlog="backlog"):
+def calculate_overflow(original_playlist, max_len, min_len, max_fill=10, backlog="backlog"):
+    """
+    Calculates how many videos to send to the overflow playlist
+
+    @param original_playlist:   The playlist to calculate overflow for
+    @param max_len:             The maximum length that the playlist can be before overflow videos are removed
+    @param min_len:             The minimum length that the playlist can be before filler videos are added
+    @param max_fill:            The maximum number of filler videos to add to the original playlist
+    @param backlog:             The destination of the overflowed videos and the source for the filler videos
+    @return:
+    """
+
     primary = []
     overflow = []
 
-    if len(combined) > max_length:
-        primary = combined[:max_length]
-        overflow = combined[max_length:]
-    elif len(combined) < min_length:
-        primary += add_filler(combined, cache, min_length, max_filler, backlog)
+    if len(original_playlist) > max_len:
+        primary = original_playlist[:max_len]
+        overflow = original_playlist[max_len:]
+    elif len(original_playlist) < min_len:
+        primary += add_filler(original_playlist, cache, min_len, max_fill, backlog)
 
     return primary, overflow
 
 
-def add_filler(combined, cache, min_length, max_filler=10, filler_source_name="backlog"):
+def add_filler(combined_playlist, vid_cache, min_len, max_fill=10, filler_source_name="backlog"):
     ranks = RanksHandler()
     filler_source_id = ranks.data['playlist_ids'][filler_source_name]
-    filler_source = YoutubePlaylist(id=filler_source_id, cache=cache)
+    filler_source = YoutubePlaylist(id=filler_source_id, cache=vid_cache)
     filler_source.get_playlist_items()
     filler_list = []
-    filler_to_add = min_length - len(combined)
+    filler_to_add = min_len - len(combined_playlist)
 
     added = 0
-    while added < filler_to_add and added < max_filler:
+    while added < filler_to_add and added < max_fill:
         filler_list.append(filler_source.videos[added])
         added += 1
 
@@ -182,7 +216,7 @@ combined = merge_lists(
     cache=cache
 )
 
-result, overflow = calculate_overflow(combined, max_length=max_length, min_length=min_length, max_filler=max_filler, backlog="backlog")
+result, overflow = calculate_overflow(combined, max_len=max_length, min_len=min_length, max_fill=max_filler, backlog="backlog")
 
 print(len(result))
 for video in result:
