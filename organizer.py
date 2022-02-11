@@ -6,11 +6,13 @@ from handlers.cache import VideoCache
 from handlers.utilities import Logger, ConfigHandler
 import json
 import datetime
+import math
 
 
 logger = Logger()
 logger.write()
 cache = VideoCache()
+config = ConfigHandler()
 
 
 def merge_lists(playlist_ids, tier, **kwargs):
@@ -88,6 +90,9 @@ def merge_lists(playlist_ids, tier, **kwargs):
     return combined_sorted
 
 
+def filter_invalid_videos():
+    max_duration = config.variables['VIDEO_MAX_DURATION']
+
 def sort_by_date(video_list):
     logger.write("Sorting by date")
     date_map = {}
@@ -133,7 +138,7 @@ def get_tier_channels(tier_name):
     return channels
 
 
-def calculate_overflow(combined, max_length, min_length, max_filler=10, filler_source="backlog"):
+def calculate_overflow(combined, max_length, min_length, max_filler=10, backlog="backlog"):
     primary = []
     overflow = []
 
@@ -141,7 +146,7 @@ def calculate_overflow(combined, max_length, min_length, max_filler=10, filler_s
         primary = combined[:max_length]
         overflow = combined[max_length:]
     elif len(combined) < min_length:
-        primary += add_filler(combined, cache, min_length, max_filler, filler_source)
+        primary += add_filler(combined, cache, min_length, max_filler, backlog)
 
     return primary, overflow
 
@@ -163,7 +168,11 @@ def add_filler(combined, cache, min_length, max_filler=10, filler_source_name="b
 
 
 queue = QueueHandler(cache=cache)
-result = merge_lists(
+max_length = config.variables['AUTOLIST_MAX_LENGTH']
+min_length = math.ceil(max_length/2)
+max_filler = config.variables['FILLER_LENGTH']
+
+combined = merge_lists(
     playlist_ids=[
         'PL8wvcc8NSIHL0D2-YkHcojXU5e6w1YxJm',
         queue.id,
@@ -173,6 +182,14 @@ result = merge_lists(
     cache=cache
 )
 
+result, overflow = calculate_overflow(combined, max_length=max_length, min_length=min_length, max_filler=max_filler, backlog="backlog")
+
 print(len(result))
 for video in result:
     print("\t%s: %s" % (video.data['snippet']['channelTitle'], video.title))
+
+print()
+print(len(overflow))
+for video in overflow:
+    print("\t%s: %s" % (video.data['snippet']['channelTitle'], video.title))
+
