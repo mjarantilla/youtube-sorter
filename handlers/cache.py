@@ -129,6 +129,27 @@ class VideoCache(MapCache):
                 self.data[vid_id]['playlist_membership'].pop(playlist_id)
                 self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
 
+    def _check_if_private(self, vid_id, response_obj):
+        # Load data about videos marked "private" on YouTube
+        private_videos_file = ConfigHandler().variables['PRIVATE_VIDEOS_FILE']
+        private_fp = open(private_videos_file, mode='r')
+        private_vids_data = json.load(private_fp)
+        private_videos = private_vids_data['private_videos']
+        private_fp.close()
+
+        private = False
+
+        video = response_obj['items'][0] if len(response_obj['items']) > 0 else None
+        if not video:
+            private_videos.append(vid_id)
+            private = True
+
+        private_fp = open(private_videos_file, mode='w')
+        json.dump({'private_videos': private_videos}, fp=private_fp, separators=(',', ': '), indent=2, sort_keys=True)
+        private_fp.close()
+
+        return private
+
     def add_video(self, vid_id):
         client_handler = YoutubeClientHandler()
         request = client_handler.client.videos().list(
@@ -136,17 +157,20 @@ class VideoCache(MapCache):
             id=vid_id
         )
         response = client_handler.execute(request)
-        vid_data = response['items'][0] if len(response['items']) > 0 else None
-        logger.write("Adding to cache: %s" % vid_data['snippet']['title'])
-        self.add_item(vid_id, vid_data)
-        if 'playlist_membership' not in self.data[vid_id]:
-            self.data[vid_id]['playlist_membership'] = {}
-        if 'current_playlist' not in self.data[vid_id]:
-            self.data[vid_id]['current_playlist'] = None
-        if 'date_cached' not in self.data[vid_id]:
-            self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
+        if self._check_if_private(vid_id, response):
+            vid_data = response['items'][0] if len(response['items']) > 0 else None
+            logger.write("Adding to cache: %s" % vid_data['snippet']['title'])
+            self.add_item(vid_id, vid_data)
+            if 'playlist_membership' not in self.data[vid_id]:
+                self.data[vid_id]['playlist_membership'] = {}
+            if 'current_playlist' not in self.data[vid_id]:
+                self.data[vid_id]['current_playlist'] = None
+            if 'date_cached' not in self.data[vid_id]:
+                self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
 
-        return vid_data
+            return vid_data
+
+        return None
 
     def check_cache(self, vid_id, update=False):
         """
