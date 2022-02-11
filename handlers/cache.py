@@ -1,6 +1,5 @@
 from handlers.utilities import ConfigHandler, Logger, print_json
 from handlers.client import YoutubeClientHandler
-from handlers.playlist import YoutubePlaylist
 import os
 import json
 import datetime
@@ -115,21 +114,20 @@ class VideoCache(MapCache):
     def __init__(self):
         super().__init__("videos.json")
 
-    def add_playlist_membership(self, vid_id, playlist_id, playlist_item_id, position):
-        if self.check_cache(vid_id):
+    def add_playlist_membership(self, vid_id, playlist_id, playlist_item_id, position, update=True):
+        if self.check_cache(vid_id, update):
             self.data[vid_id]['playlist_membership'][playlist_id] = {
                 'playlist_item_id': playlist_item_id,
                 'position': position
             }
             self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
-            self.write_cache()
 
-    def remove_playlist_membership(self, vid_id, playlist_id):
-        if self.check_cache(vid_id):
+    def remove_playlist_membership(self, vid_id, playlist_id, update=False):
+        logger.write("Removing playlist membership")
+        if self.check_cache(vid_id, update):
             if playlist_id in self.data[vid_id]['playlist_membership']:
                 self.data[vid_id]['playlist_membership'].pop(playlist_id)
-            self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
-            self.write_cache()
+                self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
 
     def add_video(self, vid_id):
         client_handler = YoutubeClientHandler()
@@ -139,7 +137,7 @@ class VideoCache(MapCache):
         )
         response = client_handler.execute(request)
         vid_data = response['items'][0] if len(response['items']) > 0 else None
-        logger.write("Video data queried. Adding to cache.... ")
+        logger.write("Adding to cache: %s" % vid_data['snippet']['title'])
         self.add_item(vid_id, vid_data)
         if 'playlist_membership' not in self.data[vid_id]:
             self.data[vid_id]['playlist_membership'] = {}
@@ -147,7 +145,6 @@ class VideoCache(MapCache):
             self.data[vid_id]['current_playlist'] = None
         if 'date_cached' not in self.data[vid_id]:
             self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
-        self.write_cache()
 
         return vid_data
 
@@ -170,8 +167,10 @@ class VideoCache(MapCache):
                 logger.write(msg)
                 return None
         else:
-            msg += "FOUND"
             vid_data = self.data[vid_id]
+            channel = vid_data['snippet']['channelTitle']
+            title = vid_data['snippet']['title']
+            msg += "FOUND: %s: \"%s\"" % (channel, title)
             logger.write(msg)
             return vid_data
 
