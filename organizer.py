@@ -15,14 +15,11 @@ cache = VideoCache()
 config = ConfigHandler()
 
 
-def merge_lists(playlist_ids, tier, **kwargs):
+def merge_lists(playlist_ids, tier_name, **kwargs):
     """
 
-    @param queue_videos:            A list of vid_data dictionaries for all the videos on the queue to be imported
-    @param target_playlist_videos:  A list of vid_data dictionaries for all the videos on the playlist that the queue
-                                    will be imported into
-    @param channel_list:            The sorted list of channel names for the target playlist taken from ranks.json
-    @param subscriptions:           The list of current channel subscriptions and their YouTube channel IDs
+    @param tier_name:               The name of the tier as taken from ranks.json
+    @param playlist_ids:            A list of IDs for each Youtube playlist that need to be merged
     @param kwargs:                  An catchall for any other kwargs that may be passed into the function
     @return:                        Returns the final sorted list of videos for the target playlist
     """
@@ -36,7 +33,7 @@ def merge_lists(playlist_ids, tier, **kwargs):
     playlist_videos = {}
     for playlist_id in playlists:
         playlist_videos[playlist_id] = get_playlist_videos(playlists[playlist_id], cache=cache)
-    channel_list = get_tier_channels(tier)
+    channel_list = get_tier_channels(tier_name)
     subscriptions = json.load(open("/Users/mjaranti/git/youtube-sorter/subscriptions.json", mode="r"))['details']
 
     logger.write()
@@ -87,18 +84,63 @@ def filter_invalid_videos(video_list):
     @param video_list: A list of Video() objects
     @return:
     """
-    min_duration = config.variables['VIDEO_MIN_DURATION']
-    max_duration = config.variables['VIDEO_MAX_DURATION']
+    valid_vids = []
 
-    # Load data about videos marked "private" on YouTube
-    private_videos_file = config.variables['PRIVATE_VIDEOS_FILE']
-    private_fp = open(private_videos_file, mode='r')
-    private_vids_data = json.load(private_fp)
-    private_videos = private_vids_data['private_videos']
-    private_fp.close()
-    private_fp = open(private_videos_file, mode='w')
-    json.dump({'private_videos': private_videos}, fp=private_fp, separators=(',', ': '), indent=2, sort_keys=True)
-    private_fp.close()
+    for video in video_list:
+        if check_validity(video):
+            valid_vids.append(video)
+
+    return valid_vids
+
+
+def convert_to_seconds(time_map):
+    seconds = 0
+    if 'SECONDS' in time_map:
+        seconds += int(time_map['SECONDS'])
+    if 'MINUTES' in time_map:
+        seconds += int(time_map['MINUTES']) * 60
+    if 'HOURS' in time_map:
+        seconds += int(time_map['HOURS']) * 60 * 60
+    if 'DAYS' in time_map:
+        seconds += int(time_map['DAYS']) * 24 * 60 * 60
+    return seconds
+
+
+def check_validity(video):
+    """
+    Checks the validity of a given Video() object based on the criteria specified in config.json
+
+    @param video:   A Video() object
+    @return:        True or False
+    """
+
+    min_duration_sec = convert_to_seconds(config.variables['VIDEO_MIN_DURATION'])
+    max_duration_sec = convert_to_seconds(config.variables['VIDEO_MAX_DURATION'])
+
+    video = Video(id="test")
+    if not video.private:
+        duration = video.data['contentDetails']['duration'].replace("P", "").replace("T", "")
+        days = 0
+        hours = 0
+        minutes = 0
+        seconds = 0
+        if 'D' in duration:
+            days_list = duration.split('D')
+            hours = days * 24
+            duration = days_list[1]
+        if 'H' in duration:
+            hours_list = duration.split('H')
+            hours = hours + int(hours_list[0])
+            minutes = hours * 60
+            duration = hours_list[1]
+        if 'M' in duration:
+            minutes_list = duration.split('M')
+            minutes = minutes + int(minutes_list[0])
+            seconds = minutes * 60
+            duration = minutes_list[1]
+        if 'S' in duration:
+            seconds_list = duration.split('S')
+            seconds = seconds + int(seconds_list[0])
 
 
 def sort_by_date(video_list):
