@@ -4,7 +4,7 @@ import os
 import json
 import datetime
 
-logger = Logger()
+logger = Logger(tier=4)
 
 
 class Cache:
@@ -180,9 +180,8 @@ class VideoCache(MapCache):
         @param update:  If the video data is not found in the cache, query YouTube and add it
         @return:        None if add==False and vid_id is not in the cache, OR video metadata if vid_id is in cache
         """
-        msg = "Checking cache for %s.... " % vid_id
         if vid_id not in self.data:
-            msg += "Not found. "
+            msg = "%s not found. " % vid_id
             if update:
                 vid_data = self.add_video(vid_id)
 
@@ -197,8 +196,6 @@ class VideoCache(MapCache):
             vid_data = self.data[vid_id]
             channel = vid_data['snippet']['channelTitle']
             title = vid_data['snippet']['title']
-            msg += "FOUND: %s: \"%s\"" % (channel, title)
-            logger.write(msg)
             return vid_data
 
 

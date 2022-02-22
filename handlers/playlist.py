@@ -7,7 +7,7 @@ import googleapiclient.errors
 import threading
 import copy
 
-logger = Logger()
+logger = Logger(tier=3)
 
 
 class YoutubePlaylist:
@@ -32,7 +32,6 @@ class YoutubePlaylist:
             if item_id == self.id:
                 result = item
         title = result['snippet']['title']
-        logger.write("Fetched playlist title: %s" % title)
 
         return title
 
@@ -74,7 +73,7 @@ class YoutubePlaylist:
         # Add all videos in self.videos to the VideoCache() object if not already there
         logger.write("Adding to \"%s\" playlist membership:" % self.title)
         for vid_data in self.videos:
-            logger.write("\t- %s" % vid_data['snippet']['title'])
+            logger.write("- %s" % vid_data['snippet']['title'])
             vid_id = vid_data['contentDetails']['videoId']
             vid_ids.append(vid_id)
             playlist_item_id = vid_data['id']
@@ -94,7 +93,7 @@ class YoutubePlaylist:
                 if vid_id not in vid_ids:
                     vid_data = self.cache.data[vid_id]
                     vid_title = vid_data['snippet']['title']
-                    logger.write("\t- %s" % vid_title)
+                    logger.write("- %s" % vid_title)
                     self.cache.remove_playlist_membership(vid_id=vid_id, playlist_id=self.id)
 
 
@@ -331,7 +330,8 @@ class QueueHandler(YoutubePlaylist):
         days_to_search = config.variables['DAYS_TO_SEARCH']
         self.date_format = config.variables['YOUTUBE_DATE_FORMAT']
         self.oldest_date = datetime.now() - timedelta(days=days_to_search)
-        logger.write(self.oldest_date.strftime(config.variables['EVENT_LOG_FORMAT']))
+
+        # logger.write(self.oldest_date.strftime(config.variables['EVENT_LOG_FORMAT']))
 
     def scan_ordered_channels(self, rank_order=None):
         if rank_order is None:

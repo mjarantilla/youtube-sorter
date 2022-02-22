@@ -9,7 +9,7 @@ from handlers.utilities import ConfigHandler, print_json, Logger
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-logger = Logger()
+logger = Logger(tier=5)
 
 
 class YoutubeClientHandler:

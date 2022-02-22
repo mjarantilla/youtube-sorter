@@ -3,7 +3,7 @@ from handlers.client import YoutubeClientHandler
 from handlers.playlist import YoutubePlaylist
 import json
 
-logger = Logger()
+logger = Logger(tier=3)
 
 
 class Video:
