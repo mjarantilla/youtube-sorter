@@ -34,7 +34,7 @@ class Video:
 
         return False
 
-    def add_to_playlist(self, playlist_id, position=0):
+    def add_to_playlist(self, playlist_id, position=0, test=False):
         """
         Adds the video to the specified playlist at the specified position.
 
@@ -51,24 +51,30 @@ class Video:
         }
 
         if playlist_id not in self.data['playlist_membership']:
-            playlist_item = self.client.playlist_items_insert(params, part='snippet')
-            self.data['playlist_membership'][playlist_id] = {
-                'playlist_item_id': playlist_item['id'],
-                'position': position
-            }
-            self.data['current_playlist'] = playlist_id
-            self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
-            logger.write("Added to playlist:")
-        else:
-            if position != self.data['playlist_membership'][playlist_id]['position']:
-                playlist_item_id = self.data['playlist_membership'][playlist_id]['playlist_item_id']
-                params['id'] = playlist_item_id
-                playlist_item = self.client.playlist_item_update_position(params, part='snippet')
+            if not test:
+                playlist_item = self.client.playlist_items_insert(params, part='snippet')
                 self.data['playlist_membership'][playlist_id] = {
                     'playlist_item_id': playlist_item['id'],
                     'position': position
                 }
+                self.data['current_playlist'] = playlist_id
                 self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
+            logger.write("Added to pos %s: \"%s\"" % (position +1, self.title))
+        else:
+            playlist_item_id = self.data['playlist_membership'][playlist_id]['playlist_item_id']
+            original_position = self.data['playlist_membership'][playlist_id]['position']
+            if position != self.data['playlist_membership'][playlist_id]['position']:
+                params['id'] = playlist_item_id
+                if not test:
+                    playlist_item = self.client.playlist_item_update_position(params, part='snippet')
+                    self.data['playlist_membership'][playlist_id] = {
+                        'playlist_item_id': playlist_item['id'],
+                        'position': position
+                    }
+                    self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
+                logger.write("Moved from %s to %s: \"%s\"" % (original_position +1, position +1, self.title))
+            else:
+                logger.write("Keeping in pos %s: \"%s\"" % (position +1, self.title))
 
         return response
 
