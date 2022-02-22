@@ -1,7 +1,7 @@
 from handlers.utilities import ConfigHandler, Logger, print_json
 from handlers.client import YoutubeClientHandler
 from handlers.playlist import YoutubePlaylist
-from copy import deepcopy
+import json
 
 logger = Logger()
 
@@ -12,12 +12,27 @@ class Video:
 
         @param id:  The YouTube-assigned unique ID for the video
         """
+        self.id = id
         self.config = ConfigHandler() if 'config' not in kwargs else kwargs['config']
         self.cache = cache
+        self.private = self._check_if_private()
         self.client = YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
-        self.id = id
         self.data = self.cache.check_cache(self.id, update=True)
         self.title = self.data['snippet']['title']
+
+    def _check_if_private(self):
+        # Load data about videos marked "private" on YouTube
+        private_videos_file = self.config.variables['PRIVATE_VIDEOS_FILE']
+        private_fp = open(private_videos_file, mode='r')
+        private_vids_data = json.load(private_fp)
+        private_videos = private_vids_data['private_videos']
+        private_fp.close()
+
+        if self.id in private_videos:
+            if self.cache.check_cache(self.id, True):
+                return True
+
+        return False
 
     def add_to_playlist(self, playlist_id, position=0):
         """
