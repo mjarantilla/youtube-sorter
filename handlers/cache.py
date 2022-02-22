@@ -169,8 +169,6 @@ class VideoCache(MapCache):
                 self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
 
             return vid_data
-        else:
-            self.data[vid_id] = None
 
         return None
 
