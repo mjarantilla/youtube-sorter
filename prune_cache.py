@@ -10,5 +10,5 @@ playlist_ids = ranks.data['playlist_ids']
 cache = VideoCache()
 for playlist_id in playlist_ids:
     playlist = YoutubePlaylist(id=playlist_id, cache=cache)
-    playlist.sync_local_with_yt()
+    # playlist.sync_local_with_yt()     # Replace this line of code with something that works for pruning
 
