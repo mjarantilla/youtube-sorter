@@ -129,7 +129,7 @@ class VideoCache(MapCache):
                 self.data[vid_id]['playlist_membership'].pop(playlist_id)
                 self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
 
-    def _check_if_private(self, vid_id, response_obj):
+    def _is_private(self, vid_id, response_obj):
         # Load data about videos marked "private" on YouTube
         private_videos_file = self.config.variables['PRIVATE_VIDEOS_FILE']
         private_fp = open(private_videos_file, mode='r')
@@ -157,7 +157,7 @@ class VideoCache(MapCache):
             id=vid_id
         )
         response = client_handler.execute(request)
-        if self._check_if_private(vid_id, response):
+        if not self._is_private(vid_id, response):
             vid_data = response['items'][0] if len(response['items']) > 0 else None
             logger.write("Adding to cache: %s" % vid_data['snippet']['title'])
             self.add_item(vid_id, vid_data)
@@ -182,8 +182,8 @@ class VideoCache(MapCache):
         @param update:  If the video data is not found in the cache, query YouTube and add it
         @return:        None if add==False and vid_id is not in the cache, OR video metadata if vid_id is in cache
         """
-        msg = "Checking cache.... "
-        if vid_id not in self.data or (vid_id in self.data and self.data[vid_id] is None):
+        msg = "Checking cache for %s.... " % vid_id
+        if vid_id not in self.data:
             msg += "Not found. "
             if update:
                 vid_data = self.add_video(vid_id)
@@ -192,6 +192,9 @@ class VideoCache(MapCache):
             else:
                 logger.write(msg)
                 return None
+        elif vid_id in self.data and self.data[vid_id] is None:
+            vid_data = self.add_video(vid_id)
+            return vid_data
         else:
             vid_data = self.data[vid_id]
             channel = vid_data['snippet']['channelTitle']
