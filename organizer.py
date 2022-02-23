@@ -2,7 +2,7 @@ from handlers.client import YoutubeClientHandler
 from handlers.playlist import YoutubePlaylist, QueueHandler
 from handlers.videos import Video
 from handlers.ranks import RanksHandler
-from handlers.cache import VideoCache
+from handlers.cache import VideoCache, PlaylistCache
 from handlers.utilities import Logger, ConfigHandler, print_json
 import json
 import datetime
@@ -17,7 +17,7 @@ config = ConfigHandler()
 logger.write()
 
 
-def merge_lists(playlists, tier_name, subscriptions, date_sorting=False, **kwargs):
+def determine_tier_videos(playlist_videos, tier_name, subscriptions, date_sorting=False, **kwargs):
     """
 
     @param playlists:               A list of YoutubePlaylist() objects for each Youtube playlist that need to be merged
@@ -30,9 +30,6 @@ def merge_lists(playlists, tier_name, subscriptions, date_sorting=False, **kwarg
 
     logger.write("Getting playlist videos", tier=1)
     sorted_channel_ids = sort_channels_by_tier(tier_name, subscriptions)
-    playlist_videos = {}
-    for playlist in playlists:
-        playlist_videos[playlist.id] = get_playlist_videos(playlist)
 
     logger.write("Combining playlist videos", tier=1)
     combined_unsorted = []
@@ -62,6 +59,16 @@ def merge_lists(playlists, tier_name, subscriptions, date_sorting=False, **kwarg
                 combined_sorted.append(video)
 
     return combined_sorted
+
+
+def get_videos(playlists):
+    logger.write("Fetching video info for all videos in playlists", tier=1)
+    playlist_videos = {}
+    for playlist in playlists:
+        playlist_handler = playlists[playlist]
+        playlist_videos[playlist_handler.id] = filter_invalid_videos(get_playlist_videos(playlist_handler))
+    logger.write("DONE fetching video info")
+    return playlist_videos
 
 
 def get_channel_index(subscriptions):
@@ -96,6 +103,7 @@ def filter_invalid_videos(video_list):
     @param video_list: A list of Video() objects
     @return:
     """
+    logger.write("Filtering invalid videos", tier=2)
     valid_vids = []
 
     for video in video_list:
@@ -129,7 +137,6 @@ def check_validity(video):
     min_duration_sec = convert_to_seconds(config.variables['VIDEO_MIN_DURATION'])
     max_duration_sec = convert_to_seconds(config.variables['VIDEO_MAX_DURATION'])
 
-    video = Video(id="test", cache=cache)
     if not video.private:
         duration = video.data['contentDetails']['duration'].replace("P", "").replace("T", "")
         days = 0
@@ -153,6 +160,12 @@ def check_validity(video):
         if 'S' in duration:
             seconds_list = duration.split('S')
             seconds = seconds + int(seconds_list[0])
+
+        if min_duration_sec < seconds < max_duration_sec:
+            return True
+
+    logger.write("Rejecting %s" % video.title, tier=3)
+    return False
 
 
 def sort_by_date(video_list):
@@ -213,7 +226,7 @@ def get_tier_channels(tier_name):
     return channels
 
 
-def calculate_overflow(original_playlist, max_len, min_len, max_fill=10, backlog="backlog"):
+def calculate_overflow(original_playlist, filler, max_len, min_len, max_fill=10):
     """
     Calculates how many videos to send to the overflow playlist
 
@@ -226,32 +239,37 @@ def calculate_overflow(original_playlist, max_len, min_len, max_fill=10, backlog
     """
 
     logger.write("Calculating overflow items", tier=1)
-    primary = []
     overflow = []
 
     if len(original_playlist) > max_len:
         primary = original_playlist[:max_len]
         overflow = original_playlist[max_len:]
-    elif len(original_playlist) < min_len:
-        primary += add_filler(original_playlist, cache, min_len, max_fill, backlog)
+    else:
+        primary = original_playlist
+        if len(original_playlist) < min_len:
+            filler_to_add = min_len - len(original_playlist)
+        else:
+            filler_to_add = max_fill if max_len - len(original_playlist) > max_fill \
+                                     else max_len - len(original_playlist)
+        filler_added = 0
+        while filler_added < filler_to_add:
+            primary.append(filler[filler_added])
+            filler_added += 1
 
     return primary, overflow
 
 
-def add_filler(combined_playlist, vid_cache, min_len, max_fill=10, filler_source_name="backlog"):
-    ranks = RanksHandler()
-    filler_source_id = ranks.data['playlist_ids'][filler_source_name]
-    filler_source = YoutubePlaylist(id=filler_source_id, cache=vid_cache)
-    filler_source.get_playlist_items()
-    filler_list = []
-    filler_to_add = min_len - len(combined_playlist)
+def fetch_playlists(playlist_map):
+    playlists = {}
+    logger.write("Fetching playlists")
+    for playlist_name in playlist_map:
+        playlist_id = playlist_map[playlist_name]
+        playlists[playlist_name] = YoutubePlaylist(playlist_id, cache=cache)
+        playlists[playlist_name].get_playlist_items()
 
-    added = 0
-    while added < filler_to_add and added < max_fill:
-        filler_list.append(filler_source.videos[added])
-        added += 1
-
-    return filler_list
+    logger.write("DONE fetching all playlists.")
+    logger.write()
+    return playlists
 
 
 def main(test=False):
@@ -279,23 +297,17 @@ def main(test=False):
         'backlog': 'PL8wvcc8NSIHIHFbnOfyXxHo2Q3UnlSpa4'
     }
 
-    playlists = {}
-    logger.write("Fetching playlists")
-    for playlist_name in playlist_map:
-        playlist_id = playlist_map[playlist_name]
-        playlists[playlist_name] = YoutubePlaylist(playlist_id, cache=cache)
-        playlists[playlist_name].get_playlist_items()
+    playlists = fetch_playlists(playlist_map)
+    playlist_videos = get_videos(playlists)
 
-    logger.write("DONE fetching all playlists.")
     logger.write()
-
     logger.write("SORTING primary tier videos in current playlists")
-    primary = merge_lists(
-        playlists=[
-            playlists['watch_later'],
-            playlists['queue'],
-            playlists['backlog']
-        ],
+    primary = determine_tier_videos(
+        playlist_videos ={
+            playlist_map['watch_later']: playlist_videos[playlist_map['watch_later']],
+            playlist_map['queue']: playlist_videos[playlist_map['queue']],
+            playlist_map['backlog']: playlist_videos[playlist_map['backlog']]
+        },
         tier_name='primary',
         subscriptions=subscriptions,
         cache=cache
@@ -303,11 +315,11 @@ def main(test=False):
     logger.write("DONE sorting primary tier videos")
     logger.write()
     logger.write("SORTING filler videos in queue and watch later playlists")
-    filler_in_primary = merge_lists(
-        playlists=[
-            playlists['watch_later'],
-            playlists['queue']
-        ],
+    filler_in_primary = determine_tier_videos(
+        playlist_videos={
+            playlist_map['watch_later']: playlist_videos[playlist_map['watch_later']],
+            playlist_map['queue']: playlist_videos[playlist_map['queue']]
+        },
         tier_name='secondary',
         cache=cache,
         subscriptions=subscriptions,
@@ -316,12 +328,12 @@ def main(test=False):
     logger.write("DONE sorting filler videos in queue and watch later")
     logger.write()
     logger.write("SORTING filler videos in current playlists")
-    all_filler = merge_lists(
-        playlists=[
-            playlists['watch_later'],
-            playlists['queue'],
-            playlists['backlog']
-        ],
+    all_filler = determine_tier_videos(
+        playlist_videos={
+            playlist_map['watch_later']: playlist_videos[playlist_map['watch_later']],
+            playlist_map['queue']: playlist_videos[playlist_map['queue']],
+            playlist_map['backlog']: playlist_videos[playlist_map['backlog']]
+        },
         tier_name='secondary',
         cache=cache,
         subscriptions=subscriptions,
@@ -335,38 +347,51 @@ def main(test=False):
         filler_in_primary,
         all_filler
     ]
-    print("PRINTING all videos")
-    for vid_list in lists:
-        for video in vid_list:
-            print(video.data['snippet']['channelTitle'], ":\t", video.title)
-        print()
-        print()
 
-    input()
-    """
-    Below, write functions to calculate backlog/overflow, and to pull only those videos from the backlog that need to be imported
-    """
+    combined = primary + filler_in_primary
 
-    result, overflow = calculate_overflow(primary, max_len=max_length, min_len=min_length, max_fill=max_filler, backlog="backlog")
+    result, overflow = calculate_overflow(original_playlist=combined, filler=all_filler, max_len=max_length, min_len=min_length, max_fill=max_filler)
 
     logger.write()
     logger.write("Total items: %i" % (len(result + overflow)))
     logger.write("Items in main playlist: %i" % len(result))
     logger.write("Items to be added to overflow: %i" % len(overflow))
+
+    output_fp = open('cache/main.json', mode='w')
+
+    logger.write()
+    logger.write("Adding to primary")
     i = 0
+    offset = 0
+    existing_videos = []
+    playlist_id = 'PL8wvcc8NSIHL0D2-YkHcojXU5e6w1YxJm'
     for video in result:
-        video.add_to_playlist(
-            playlist_id='PL8wvcc8NSIHL0D2-YkHcojXU5e6w1YxJm',
+        state_change = video.add_to_playlist(
+            playlist_id=playlist_id,
             position=i,
+            offset=offset,
             test=test
         )
         i += 1
+    output_fp.close()
 
+    logger.write()
+    logger.write("Adding to backlog")
     for video in reversed(overflow):
         video.add_to_playlist(
             playlist_id='PL8wvcc8NSIHIHFbnOfyXxHo2Q3UnlSpa4',
             position=0,
             test=test
         )
+
+    output_fp = open('cache/backlog.json', mode='w')
+
+    for video in overflow:
+        print(video.title, file=output_fp)
+
+    output_fp.close()
+    if not test:
+        cache.write_cache()
+
 
 main(test=True)
