@@ -203,3 +203,15 @@ class PlaylistCache(ListCache):
     def __init__(self, file, playlist_id):
         super().__init__(file)
         self.id = playlist_id
+        self.data = {
+            'video_list': [],
+            'video_metadata': []
+        }
+
+    def add_item(self, item):
+        video = item
+        self.data['video_list'].append((video.channel_name, video.title))
+        self.data['video_metadata'].append(video.data)
+
+    def print_cache(self):
+        print_json(self.data)
