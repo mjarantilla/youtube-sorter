@@ -68,7 +68,7 @@ class Logger:
         tab_count = 0
         prefix = ""
         while tab_count < tier:
-            prefix += " . "
+            prefix += "   "
             tab_count += 1
         message = LogMessage(
             msg=prefix + msg,
