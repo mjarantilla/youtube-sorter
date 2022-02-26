@@ -114,6 +114,13 @@ class VideoCache(MapCache):
     def __init__(self):
         super().__init__("videos.json")
 
+    def check_playlist_membership(self, vid_id, playlist_id):
+        if self.check_cache(vid_id):
+            if playlist_id in self.data[vid_id]['playlist_membership']:
+                return True
+
+        return False
+
     def add_playlist_membership(self, vid_id, playlist_id, playlist_item_id, position, update=True):
         if self.check_cache(vid_id, update):
             self.data[vid_id]['playlist_membership'][playlist_id] = {
@@ -163,8 +170,6 @@ class VideoCache(MapCache):
             self.add_item(vid_id, vid_data)
             if 'playlist_membership' not in self.data[vid_id]:
                 self.data[vid_id]['playlist_membership'] = {}
-            if 'current_playlist' not in self.data[vid_id]:
-                self.data[vid_id]['current_playlist'] = None
             if 'date_cached' not in self.data[vid_id]:
                 self.data[vid_id]['date_cached'] = datetime.datetime.now().timestamp()
 
@@ -180,7 +185,9 @@ class VideoCache(MapCache):
         @param update:  If the video data is not found in the cache, query YouTube and add it
         @return:        None if add==False and vid_id is not in the cache, OR video metadata if vid_id is in cache
         """
-        if vid_id not in self.data:
+
+        # If vid_id doesn't exist OR if the vid_id was erroneously entered with null data
+        if vid_id not in self.data or vid_id in self.data and self.data[vid_id] is None:
             msg = "%s not found. " % vid_id
             if update:
                 vid_data = self.add_video(vid_id)
@@ -189,9 +196,6 @@ class VideoCache(MapCache):
             else:
                 logger.write(msg)
                 return None
-        elif vid_id in self.data and self.data[vid_id] is None:
-            vid_data = self.add_video(vid_id)
-            return vid_data
         else:
             vid_data = self.data[vid_id]
             channel = vid_data['snippet']['channelTitle']
