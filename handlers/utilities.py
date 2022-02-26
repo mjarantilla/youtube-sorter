@@ -71,7 +71,7 @@ class Logger:
             prefix += "   "
             tab_count += 1
         message = LogMessage(
-            msg=prefix + msg,
+            msg=str(prefix) + str(msg),
             event_time_format=self.format,
             logfile=self.file,
             silent=self.silent
