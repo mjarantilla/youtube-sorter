@@ -23,6 +23,7 @@ class YoutubePlaylist:
             'id': self.id,
             'part': 'snippet'
         }
+        logger.write("Getting playlist name")
         request = self.client_handler.client.playlists().list(**params)
         response = self.client_handler.execute(request)
         items = response['items']
@@ -71,30 +72,46 @@ class YoutubePlaylist:
         vid_ids = []
 
         # Add all videos in self.videos to the VideoCache() object if not already there
-        logger.write("Adding to \"%s\" playlist membership:" % self.title)
+        videos_to_add = []
+        videos_to_remove = []
+        logger.write("Checking if videos need to be added")
         for vid_data in self.videos:
-            logger.write("- %s" % vid_data['snippet']['title'])
             vid_id = vid_data['contentDetails']['videoId']
             vid_ids.append(vid_id)
-            playlist_item_id = vid_data['id']
-            position = vid_data['snippet']['position']
-            self.cache.add_playlist_membership(
-                vid_id=vid_id,
-                playlist_id=self.id,
-                playlist_item_id=playlist_item_id,
-                position=position,
-                update=True
-            )
+            if not self.cache.check_playlist_membership(vid_id, self.id):
+                videos_to_add.append(vid_data)
+
+        logger.write("Checking if videos need to be removed")
+        for vid_id in self.cache.data:
+            if vid_id in vid_ids:
+                if self.id not in self.cache.data[vid_id]['playlist_membership']:
+                    vid_data = self.cache.data[vid_id]
+                    videos_to_remove.append(vid_data)
+
+        if len(videos_to_add) > 0:
+            logger.write("Adding to \"%s\" playlist membership:" % self.title)
+            for vid_data in videos_to_add:
+                logger.write("- %s" % vid_data['snippet']['title'])
+                vid_id = vid_data['contentDetails']['videoId']
+                vid_ids.append(vid_id)
+                playlist_item_id = vid_data['id']
+                position = vid_data['snippet']['position']
+                self.cache.add_playlist_membership(
+                    vid_id=vid_id,
+                    playlist_id=self.id,
+                    playlist_item_id=playlist_item_id,
+                    position=position,
+                    update=True
+                )
 
         # For any videos in the VideoCache() that aren't in the playlist, remove their membership record
-        logger.write("Removing playlist membership:")
-        for vid_id in self.cache.data:
-            if self.id in self.cache.data[vid_id]['playlist_membership']:
-                if vid_id not in vid_ids:
-                    vid_data = self.cache.data[vid_id]
-                    vid_title = vid_data['snippet']['title']
-                    logger.write("- %s" % vid_title)
-                    self.cache.remove_playlist_membership(vid_id=vid_id, playlist_id=self.id)
+        if len(videos_to_remove) > 0:
+            logger.write("Removing playlist membership:")
+            for vid_data in videos_to_remove:
+                vid_title = vid_data['snippet']['title']
+                logger.write("- %s" % vid_title)
+                self.cache.remove_playlist_membership(vid_id=vid_data['id'], playlist_id=self.id)
+                videos_to_remove.append(vid_data)
 
 
 class Records:
