@@ -11,7 +11,7 @@ class Cache:
     """
     Parent class for all other caches
     """
-    def __init__(self, file):
+    def __init__(self, file, client=None):
         """
         Initialization method.
 
@@ -24,6 +24,7 @@ class Cache:
         self.dir = self.config.variables['CACHE_DIR']
         self.file = os.path.join(self.dir, file)
         self.data = None
+        self.client = client if client is not None else YoutubeClientHandler()
 
     def read_cache(self):
         logger.write("Reading cache file: %s" % self.file)
@@ -158,7 +159,7 @@ class VideoCache(MapCache):
         return private
 
     def add_video(self, vid_id):
-        client_handler = YoutubeClientHandler()
+        client_handler = self.client
         request = client_handler.client.videos().list(
             part='snippet,contentDetails',
             id=vid_id

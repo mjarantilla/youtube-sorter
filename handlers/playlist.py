@@ -86,6 +86,7 @@ class YoutubePlaylist:
             if vid_id in vid_ids:
                 if self.id not in self.cache.data[vid_id]['playlist_membership']:
                     vid_data = self.cache.data[vid_id]
+                    vid_data['id'] = vid_id
                     videos_to_remove.append(vid_data)
 
         if len(videos_to_add) > 0:
@@ -111,7 +112,7 @@ class YoutubePlaylist:
                 vid_title = vid_data['snippet']['title']
                 logger.write("- %s" % vid_title)
                 self.cache.remove_playlist_membership(vid_id=vid_data['id'], playlist_id=self.id)
-                videos_to_remove.append(vid_data)
+                videos_to_remove.pop(0)
 
 
 class Records:
