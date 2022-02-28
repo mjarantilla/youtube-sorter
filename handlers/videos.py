@@ -51,17 +51,15 @@ class Video:
             'snippet.resourceId.videoId': self.id,
             'snippet.position': position,
         }
-        new_item = playlist_id not in self.data['playlist_membership']
-        if new_item:
-            if not test:
-                playlist_item = self.client.playlist_items_insert(params, part='snippet')
-                self.data['playlist_membership'][playlist_id] = {
-                    'playlist_item_id': playlist_item['id'],
-                    'position': position
-                }
-                self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
+        if not test:
+            playlist_item = self.client.playlist_items_insert(params, part='snippet')
+            self.data['playlist_membership'][playlist_id] = {
+                'playlist_item_id': playlist_item['id'],
+                'position': position
+            }
+            self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
 
-    def update_playlist_position(self, playlist_id, position=0, test=False):
+    def update_playlist_position(self, playlist_item_id, playlist_id, position=0, test=False):
         """
         Updates the video's position in the specified playlist to the specified position.
 
@@ -70,20 +68,19 @@ class Video:
         @return:            The REST response
         """
         params = {
+            'id':playlist_item_id,
             'snippet.playlistId': playlist_id,
             'snippet.resourceId.kind': 'youtube#video',
             'snippet.resourceId.videoId': self.id,
             'snippet.position': position,
         }
-        current_item = playlist_id in self.data['playlist_membership']
-        if current_item:
-            if not test:
-                playlist_item = self.client.playlist_items_insert(params, part='snippet')
-                self.data['playlist_membership'][playlist_id] = {
-                    'playlist_item_id': playlist_item['id'],
-                    'position': position
-                }
-                self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
+        if not test:
+            playlist_item = self.client.playlist_item_update_position(params, part='snippet')
+            self.data['playlist_membership'][playlist_id] = {
+                'playlist_item_id': playlist_item['id'],
+                'position': position
+            }
+            self.cache.add_playlist_membership(self.id, playlist_id, playlist_item['id'], position)
 
     def check_playlist_membership(self, playlist_id=None, playlist_handler=None, verify_only=False):
         """
@@ -96,7 +93,7 @@ class Video:
 
         assert playlist_id or playlist_handler, "Must pass either a playlist_id or playlist_handler"
 
-        playlist = YoutubePlaylist(id=playlist_id, cache=self.cache) if playlist_handler is None else playlist_handler
+        playlist = YoutubePlaylist(id=playlist_id, cache=self.cache, client=self.client) if playlist_handler is None else playlist_handler
         if len(playlist.videos) == 0:
             playlist.get_playlist_items()
         instances = []
@@ -140,13 +137,27 @@ class Video:
 
         logger.write("%i duplicate(s) removed" % removed)
 
-    def remove_from_playlist(self, playlist_id, already_checked=True, test=False):
+    def remove_from_playlist(self, playlist_id, playlist_item_id=None, already_checked=True, test=False):
         """
         Removes the video from the specified playlist
 
         @param playlist_id: The ID of the Youtube playlist to check for the video's membership
         @return:            True if the video was part of a playlist and subsequently removed. False if not.
         """
+        if playlist_item_id is not None:
+            params = {
+                'id': playlist_item_id
+            }
+            response = None
+            if not test:
+                request = self.client.client.playlistItems().delete(**params)
+                response = self.client.execute(request)
+                self.cache.remove_playlist_membership(self.id, playlist_id)
+
+            logger.write("Removed from playlist: %s" % self.title)
+
+            return response
+
         if not already_checked:
             already_checked = self.check_playlist_membership(playlist_id)
         if already_checked:
