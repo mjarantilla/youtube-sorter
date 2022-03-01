@@ -137,14 +137,16 @@ class Video:
 
         logger.write("%i duplicate(s) removed" % removed)
 
-    def remove_from_playlist(self, playlist_id, playlist_item_id=None, already_checked=True, test=False):
+    def remove_from_playlist(self, playlist_id=None, playlist_item_id=None, already_checked=True, test=False):
         """
         Removes the video from the specified playlist
 
         @param playlist_id: The ID of the Youtube playlist to check for the video's membership
         @return:            True if the video was part of a playlist and subsequently removed. False if not.
         """
-        if playlist_item_id is not None:
+        assert playlist_id or playlist_item_id, "Either playlist_id or playlist_item_id needs to be specified"
+
+        if playlist_item_id:
             params = {
                 'id': playlist_item_id
             }
@@ -161,21 +163,22 @@ class Video:
         if not already_checked:
             already_checked = self.check_playlist_membership(playlist_id)
         if already_checked:
-            if playlist_id in self.data['playlist_membership']:
-                playlist_item_id = self.data['playlist_membership'][playlist_id]['playlist_item_id']
+            if playlist_id:
+                if playlist_id in self.data['playlist_membership']:
+                    playlist_item_id = self.data['playlist_membership'][playlist_id]['playlist_item_id']
 
-                params = {
-                    'id': playlist_item_id
-                }
-                response = None
-                if not test:
-                    request = self.client.client.playlistItems().delete(**params)
-                    response = self.client.execute(request)
-                    self.cache.remove_playlist_membership(self.id, playlist_id)
+                    params = {
+                        'id': playlist_item_id
+                    }
+                    response = None
+                    if not test:
+                        request = self.client.client.playlistItems().delete(**params)
+                        response = self.client.execute(request)
+                        self.cache.remove_playlist_membership(self.id, playlist_id)
 
-                logger.write("Removed from playlist: %s" % self.title)
+                    logger.write("Removed from playlist: %s" % self.title)
 
-                return response
+                    return response
         else:
             return None
 
