@@ -92,7 +92,7 @@ def assemble_local_playlists(primary_playlist_name, backlog_name, queue_name, pl
             "vid_source": video.metadata
         })
 
-    outputs_fp = open('../cache/outputs.json', mode='w')
+    outputs_fp = open(os.path.join(config.variables['CACHE_DIR'], 'outputs.json'), mode='w')
     print_json(outputs, fp=outputs_fp)
     outputs_fp.close()
 
