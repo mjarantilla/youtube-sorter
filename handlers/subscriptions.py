@@ -7,7 +7,7 @@ from datetime import datetime
 import json
 import os
 
-logger = utilities.Logger()
+logger = utilities.Logger(tier=3)
 
 class SubscriptionsHandler:
     def __init__(self, **kwargs):

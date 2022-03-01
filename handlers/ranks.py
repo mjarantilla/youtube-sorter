@@ -3,7 +3,9 @@ from datetime import datetime
 from copy import deepcopy
 import json, os
 
-logger = utilities.Logger()
+logger = utilities.Logger(tier=3)
+
+
 class Tier:
     def __init__(self, **kwargs):
         self.name = kwargs['tier']

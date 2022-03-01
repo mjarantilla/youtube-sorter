@@ -9,3 +9,4 @@ records.json*
 ranks.json
 *test*
 subscriptions.json
+cache/*

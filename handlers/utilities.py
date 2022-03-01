@@ -35,11 +35,12 @@ class ConfigHandler:
 
 
 class Logger:
-    def __init__(self, silent=False):
+    def __init__(self, tier=0, silent=False):
         self.config = ConfigHandler()
         self.silent = self.config.variables['SILENT']
         self.file = self.config.log_filepath
         self.format = self.config.variables['EVENT_LOG_FORMAT']
+        self.tier = tier
 
     def initialize(self):
         fp = open(self.file, mode='w')
@@ -60,10 +61,17 @@ class Logger:
             shutil.copyfile(self.file, ".".join([self.file,file_suffix]))
             self.initialize()
 
-    def write(self, msg=""):
+    def write(self, msg="", tier=None):
         self.rename()
+        if tier is None:
+            tier = self.tier
+        tab_count = 0
+        prefix = ""
+        while tab_count < tier:
+            prefix += "   "
+            tab_count += 1
         message = LogMessage(
-            msg=msg,
+            msg=str(prefix) + str(msg),
             event_time_format=self.format,
             logfile=self.file,
             silent=self.silent

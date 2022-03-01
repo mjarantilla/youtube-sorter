@@ -2,60 +2,117 @@ from handlers import client, utilities, ranks
 import json
 from time import sleep
 from datetime import datetime, timedelta
-from handlers.utilities import Logger
+from handlers.utilities import Logger, print_json
 import googleapiclient.errors
 import threading
 import copy
 
-logger = Logger()
+logger = Logger(tier=3)
 
 
 class YoutubePlaylist:
-    def __init__(self, **kwargs):
-        self.tier = kwargs['tier']
-        self.id = kwargs['id']
+    def __init__(self, id, **kwargs):
+        self.id = id
         self.videos = []
-        self.client = client.YoutubeClientHandler().get_client()
+        self.client_handler = client.YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
+        self.cache = kwargs['cache']
+        self.title = self._get_playlist_title()
 
-    def get_items(self):
+    def _get_playlist_title(self):
+        params = {
+            'id': self.id,
+            'part': 'snippet'
+        }
+        logger.write("Getting playlist name")
+        request = self.client_handler.client.playlists().list(**params)
+        response = self.client_handler.execute(request)
+        items = response['items']
+        result = {}
+        for item in items:
+            item_id = item['id']
+            if item_id == self.id:
+                result = item
+        title = result['snippet']['title']
+
+        return title
+
+    def get_playlist_items(self):
+        logger.write("Fetching playlist items for Playlist \"%s\"" % self.title)
+        page = 2
         kwargs = {
             'playlistId': self.id,
             'maxResults': 50,
             'part': "snippet,contentDetails,id"
         }
 
-        request = self.client.playlistItems().list(**kwargs)
-        response = request.execute()
+        request = self.client_handler.client.playlistItems().list(**kwargs)
+        response = self.client_handler.execute(request)
         self.videos = response['items']
 
         while 'nextPageToken' in response:
+            logger.write("Fetching page %i" % page)
             kwargs['pageToken'] = response['nextPageToken']
-            request = self.client.playlistItems().list(**kwargs)
-            response = request.execute()
+            request = self.client_handler.client.playlistItems().list(**kwargs)
+            response = self.client_handler.execute(request)
             self.videos = self.videos + response['items']
+            page += 1
+        self.update_video_cache()
+        logger.write("DONE")
+        logger.write()
 
-    def add_item(self, **kwargs):
-        position = kwargs['position']
-        previous_playlist = kwargs['previous_playlist'] if 'previous_playlist' in kwargs else None
+    def update_video_cache(self):
+        """
+        This method will update the VideoCache() object with the videos in YoutubePlaylist().videos.
+        If a video does not exist in cache, it will be queried from YouTube and added, and then its playlist membership
+        will be updated.
 
-        if previous_playlist is not None and previous_playlist != self.id:
-            self.move_item(**kwargs)
-        elif previous_playlist == self.id:
-            self.change_item_position(**kwargs)
-        else:
-            self.insert_item(**kwargs)
+        @return: None
+        """
+        logger.write("Updating local video cache with videos in YoutubePlaylist().videos")
+        vid_ids = []
 
-    def delete_item(self, **kwargs):
-        return None
+        # Add all videos in self.videos to the VideoCache() object if not already there
+        videos_to_add = []
+        videos_to_remove = []
+        logger.write("Checking if videos need to be added")
+        for vid_data in self.videos:
+            vid_id = vid_data['contentDetails']['videoId']
+            vid_ids.append(vid_id)
+            if not self.cache.check_playlist_membership(vid_id, self.id):
+                videos_to_add.append(vid_data)
 
-    def move_item(self, **kwargs):
-        return None
+        logger.write("Checking if videos need to be removed")
+        for vid_id in self.cache.data:
+            if vid_id in vid_ids:
+                if self.id not in self.cache.data[vid_id]['playlist_membership']:
+                    vid_data = self.cache.data[vid_id]
+                    vid_data['id'] = vid_id
+                    videos_to_remove.append(vid_data)
 
-    def change_item_position(self, **kwargs):
-        return None
+        if len(videos_to_add) > 0:
+            logger.write("Adding to \"%s\" playlist membership:" % self.title)
+            for vid_data in videos_to_add:
+                logger.write("- %s" % vid_data['snippet']['title'])
+                vid_id = vid_data['contentDetails']['videoId']
+                vid_ids.append(vid_id)
+                playlist_item_id = vid_data['id']
+                position = vid_data['snippet']['position']
+                self.cache.add_playlist_membership(
+                    vid_id=vid_id,
+                    playlist_id=self.id,
+                    playlist_item_id=playlist_item_id,
+                    position=position,
+                    update=True
+                )
 
-    def insert_item(self, **kwargs):
-        return None
+        # For any videos in the VideoCache() that aren't in the playlist, remove their membership record
+        if len(videos_to_remove) > 0:
+            logger.write("Removing playlist membership:")
+            for vid_data in videos_to_remove:
+                vid_title = vid_data['snippet']['title']
+                logger.write("- %s" % vid_title)
+                self.cache.remove_playlist_membership(vid_id=vid_data['id'], playlist_id=self.id)
+                videos_to_remove.pop(0)
 
 
 class Records:
@@ -277,10 +334,13 @@ class RequestThreader(threading.Thread):
         self.response = youtube.execute(request)
 
 
-class QueueHandler:
-    def __init__(self):
+class QueueHandler(YoutubePlaylist):
+    def __init__(self, **kwargs):
         config = utilities.ConfigHandler()
-        self.id = config.variables['QUEUE_ID']
+        super().__init__(
+            id=config.variables['QUEUE_ID'],
+            **kwargs
+        )
         self.ranks = ranks.RanksHandler()
         self.subscriptions = json.load(open(config.subscriptions_filepath, mode='r'))
         self.channel_details = self.subscriptions['details']
@@ -288,7 +348,8 @@ class QueueHandler:
         days_to_search = config.variables['DAYS_TO_SEARCH']
         self.date_format = config.variables['YOUTUBE_DATE_FORMAT']
         self.oldest_date = datetime.now() - timedelta(days=days_to_search)
-        logger.write(self.oldest_date.strftime(config.variables['EVENT_LOG_FORMAT']))
+
+        # logger.write(self.oldest_date.strftime(config.variables['EVENT_LOG_FORMAT']))
 
     def scan_ordered_channels(self, rank_order=None):
         if rank_order is None:
