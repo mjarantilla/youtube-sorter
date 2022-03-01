@@ -762,7 +762,7 @@ def verify(skip_wait=False):
     log_tier = 1
     logger.write("BEGINNING VERIFICATION", tier=log_tier)
 
-    outputs_fp = open('../cache/outputs.json')
+    outputs_fp = open(os.path.join(config.variables['CACHE_DIR'], 'outputs.json'))
     outputs = json.load(outputs_fp)
     outputs_fp.close()
     corrections = {}
@@ -777,7 +777,7 @@ def verify(skip_wait=False):
         logger.write()
 
     logger.write()
-    corrections_fp = open('../cache/corrections.json', mode="w")
+    corrections_fp = open(os.path.join(config.variables['CACHE_DIR'], 'corrections.json'), mode="w")
     print_json(corrections, fp=corrections_fp)
     corrections_fp.close()
 
@@ -1086,7 +1086,7 @@ def correct(corrections, test=False):
 
 
 def correct_playlists(test=False):
-    corrections = json.load(open("../cache/corrections.json"))
+    corrections = json.load(open(os.path.join(config.variables['CACHE_DIR'], 'corrections.json')))
     for playlist_name in corrections:
         playlist_data = corrections[playlist_name]
         correct_playlist(playlist_name, playlist_data, test)
