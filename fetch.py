@@ -1,4 +1,7 @@
+#!/usr/bin/env python3
+
 from handlers.playlist import QueueHandler, LegacyRecords
+from handlers.cache import VideoCache
 from handlers.utilities import Logger
 import argparse
 
@@ -69,7 +72,8 @@ if args['all']:
 for rank in ['f1', 'primary', 'secondary', 'waiting']:
     if args[rank]:
         ranks.append(rank)
-queue = QueueHandler()
+cache = VideoCache()
+queue = QueueHandler(cache=cache)
 if args['all']:
     queue.scan_channels(all_videos=True)
 else:
