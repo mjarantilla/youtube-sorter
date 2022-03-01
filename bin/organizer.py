@@ -19,6 +19,7 @@ logger.write()
 logger.write("Initializing caches and configs")
 cache = VideoCache()
 config = ConfigHandler()
+ranks = RanksHandler()
 client = YoutubeClientHandler('sorter.pickle')
 logger.write()
 logger.write("Initialization of objects complete")
@@ -91,7 +92,7 @@ def assemble_local_playlists(primary_playlist_name, backlog_name, queue_name, pl
             "vid_source": video.metadata
         })
 
-    outputs_fp = open('cache/outputs.json', mode='w')
+    outputs_fp = open('../cache/outputs.json', mode='w')
     print_json(outputs, fp=outputs_fp)
     outputs_fp.close()
 
@@ -134,7 +135,7 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
     logger.write()
     logger.write("SORTING primary tier videos in current playlists")
     playlists_to_include = {
-        playlist_map[primary_tier]: playlist_videos[playlist_map[primary_tier]],
+        playlist_map['primary']: playlist_videos[playlist_map['primary']],
         playlist_map['queue']: playlist_videos[playlist_map['queue']]
     }
     if filler_tier is not None:
@@ -456,11 +457,11 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
     imports = 0
 
     """ Remove duplicates first"""
-    duplicates = identify_duplicates(playlist_id=starting_playlist_id, search_videos=interim_playlist_videos, reference_list=interim_playlist_videos)
+    duplicates = identify_duplicates(search_videos=interim_playlist_videos)
 
     remove_duplicates(duplicates=duplicates, test=test)
 
-    duplicates = identify_duplicates(playlist_id=starting_playlist_id, search_videos=ending_playlist_videos, reference_list=interim_playlist_videos)
+    duplicates = identify_duplicates(search_videos=ending_playlist_videos, reference_list=interim_playlist_videos)
 
     remove_duplicates(duplicates=duplicates, test=test)
 
@@ -473,15 +474,12 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
 
         endstate_vid = ending_playlist_videos[i]
         endstate_vid_id = ending_playlist_videos[i]['vid_id']
-        logger.write("(%s) should be %s" % (str(i + 1), video['title']))
         previous_playlist_videos = interim_playlist_videos.copy()
 
-        if i <= len(interim_playlist_videos):
+        if i < len(interim_playlist_videos):
             interim_vid_id = interim_playlist_videos[i]['vid_id']
-            logger.write("(%s) actually is %s" % (str(i + 1), interim_playlist_videos[i]['title']))
 
             """ Command definition """
-            logger.write("Defining command")
             if source_playlist_id != ending_playlist_id:
                 interim_playlist_videos.insert(i, video)
                 imports += 1
@@ -522,7 +520,6 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
                     command = {"action": None}
                     command_counts["none"] += 1
         else:
-            logger.write("Defining command")
             if source_playlist_id != ending_playlist_id:
                 interim_playlist_videos.insert(i, video)
                 imports += 1
@@ -539,28 +536,30 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
                 command_counts["import"] += 1
 
         """ Actual execution of the command """
-        sleep(0.2)
         if not test:
-            logger.write("Executing command: %s" % command['action'], tier=log_tier)
-            vid_obj = Video(video['vid_id'], cache=cache, client=client)
-            if command['action'] == "update":
-                if not backlog and not queue:
+            if command['action']:
+                logger.write("Executing command: %s" % command['action'], tier=log_tier)
+                vid_obj = Video(video['vid_id'], cache=cache, client=client)
+                if command['action'] == "update":
+                    if not backlog and not queue:
+                        kwargs = {
+                            'playlist_item_id': command['playlist_item_id'],
+                            'playlist_id': command['to']['playlist'],
+                            'position': command['to']['position'],
+                            'test': test
+                        }
+                        logger.write("Updating position to pos %s: %s" % (command['to']['position'], vid_obj.title), tier=1)
+                        sleep(0.2)
+                        vid_obj.update_playlist_position(**kwargs)
+                elif command['action'] == "import":
                     kwargs = {
-                        'playlist_item_id': command['playlist_item_id'],
                         'playlist_id': command['to']['playlist'],
                         'position': command['to']['position'],
                         'test': test
                     }
-                    logger.write("Updating position to pos %s: %s" % (command['to']['position'], vid_obj.title), tier=1)
-                    vid_obj.update_playlist_position(**kwargs)
-            elif command['action'] == "import":
-                kwargs = {
-                    'playlist_id': command['to']['playlist'],
-                    'position': command['to']['position'],
-                    'test': test
-                }
-                logger.write("Importing into position %s: %s" % (command['to']['position'], vid_obj.title), tier=1)
-                vid_obj.add_to_playlist(**kwargs)
+                    logger.write("Importing into position %s: %s" % (command['to']['position'], vid_obj.title), tier=1)
+                    sleep(0.2)
+                    vid_obj.add_to_playlist(**kwargs)
         i += 1
 
     videos_to_remove = []
@@ -585,15 +584,26 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
     cache.write_cache()
 
 
-def identify_duplicates(playlist_id, search_videos, reference_list=None):
+def identify_duplicates(search_videos, reference_list=None):
     logger.write("Identifying duplicates", tier=1)
-    duplicates = {
-        playlist_id: {}
-    }
+    duplicates = {}
+    item_ids = []
     if reference_list is None:
         reference_list = search_videos.copy()
     for video in reference_list:
-        duplicates[playlist_id][video['vid_id']] = identify_duplicates_of_video(video, search_videos)
+        dupes = identify_duplicates_of_video(video, search_videos)
+        for dupe in dupes:
+            playlist_id = dupe[1]['vid_source']['source_playlist_id']
+            item_id = dupe[1]['vid_source']['source_playlist_item_id']
+            if item_id not in item_ids:
+                item_ids.append(item_id)
+                if playlist_id not in duplicates:
+                    duplicates[playlist_id] = {}
+                if dupe[1]['vid_id'] not in duplicates[playlist_id]:
+                    duplicates[playlist_id][dupe[1]['vid_id']] = []
+                duplicates[playlist_id][dupe[1]['vid_id']].append(dupe)
+                if not duplicates[playlist_id][video['vid_id']]:
+                    duplicates[playlist_id].pop(video['vid_id'])
 
     return duplicates
 
@@ -605,10 +615,10 @@ def identify_duplicates_of_video(search_video, playlist_videos):
     for video in playlist_videos:
         if search_video['vid_id'] == video['vid_id']:
             if video['vid_id'] not in instances:
-                instances.append((index, video))
+                instances.append((video['vid_source']['source_playlist_position'], video))
             else:
-                duplicates.append((index,video))
-                logger.write("%s at %s" % (video['title'], index), tier=2)
+                duplicates.append((video['vid_source']['source_playlist_position'],video))
+                logger.write("%s at %s" % (video['title'], video['vid_source']['source_playlist_position']), tier=2)
         index += 1
     if len(instances) > 0:
         instances.pop(0)
@@ -626,12 +636,12 @@ def remove_duplicates(duplicates, test=False):
                 logger.write("%s at index %s" % (vid_data['title'], index), tier=2)
                 vid_id = vid_data['vid_id']
                 video = Video(vid_id, cache=cache, client=client)
-                if not test:
-                    video.remove_from_playlist(
-                        playlist_id=playlist_id,
-                        playlist_item_id=vid_data['vid_source']['source_playlist_item_id'],
-                        already_checked=True
-                    )
+
+                video.remove_from_playlist(
+                    playlist_item_id=vid_data['vid_source']['source_playlist_item_id'],
+                    already_checked=True,
+                    test=test
+                )
 
 
 # VIDEO/PLAYLIST FETCHING FUNCTIONS
@@ -752,7 +762,7 @@ def verify(skip_wait=False):
     log_tier = 1
     logger.write("BEGINNING VERIFICATION", tier=log_tier)
 
-    outputs_fp = open('cache/outputs.json')
+    outputs_fp = open('../cache/outputs.json')
     outputs = json.load(outputs_fp)
     outputs_fp.close()
     corrections = {}
@@ -767,7 +777,7 @@ def verify(skip_wait=False):
         logger.write()
 
     logger.write()
-    corrections_fp = open('cache/corrections.json', mode="w")
+    corrections_fp = open('../cache/corrections.json', mode="w")
     print_json(corrections, fp=corrections_fp)
     corrections_fp.close()
 
@@ -786,7 +796,7 @@ def verify_local_vs_youtube(playlist_data, playlist_name='', skip_wait=False):
     if not skip_wait:
         logger.write("WAITING TO START VERIFICATION")
         counter = 0
-        while counter < 60:
+        while counter < 15:
             if counter % 5 == 0:
                 logger.write(".")
             sleep(1)
@@ -1076,7 +1086,7 @@ def correct(corrections, test=False):
 
 
 def correct_playlists(test=False):
-    corrections = json.load(open("cache/corrections.json"))
+    corrections = json.load(open("../cache/corrections.json"))
     for playlist_name in corrections:
         playlist_data = corrections[playlist_name]
         correct_playlist(playlist_name, playlist_data, test)
@@ -1110,7 +1120,19 @@ def clean_backlog(primary_id, backlog_id, test=False):
     backlog_list = create_video_list_from_playlist_items(backlog_id, backlog.title, backlog.videos)
     primary_list = create_video_list_from_playlist_items(primary_id, primary.title, primary.videos)
 
-    duplicates = identify_duplicates(backlog_id, backlog_list)
+    remove_backlog_duplicates(primary_list=primary_list, backlog_list=backlog_list, test=test)
+
+
+def remove_backlog_duplicates(primary_list, backlog_list, test=False):
+    # duplicates = identify_duplicates(backlog_id, backlog_list)
+    # remove_duplicates(duplicates, test)
+    combined_list = primary_list + backlog_list
+    duplicates = identify_duplicates(search_videos=combined_list)
+    # for playlist_id in duplicates:
+    #     vid_ids = duplicates[playlist_id]
+    #     for vid_id in vid_ids:
+    #         for instance in vid_ids[vid_id]:
+    #             print(instance[0], instance[1]['title'])
     remove_duplicates(duplicates, test)
 
 
@@ -1149,20 +1171,20 @@ def create_video_list_from_playlist_items(playlist_id, playlist_name, playlist_i
     return video_list
 
 
-def import_queue(test=False):
+def import_queue(category='primary', backlog='backlog', test=False):
     playlist_map = {
-        'primary': 'PL8wvcc8NSIHL0D2-YkHcojXU5e6w1YxJm',
-        'queue': "PL8wvcc8NSIHJiNBr0YrBolV9hWJTVVjOA",
-        'secondary': 'PL8wvcc8NSIHIHFbnOfyXxHo2Q3UnlSpa4'
+        'primary': ranks.data['playlist_ids'][category],
+        'queue': ranks.data['queues'][category],
+        'backlog': ranks.data['backlogs'][category]
     }
+    filler_tier = ranks.data['fillers'][category] if category in ranks.data['fillers'] else None
 
-    needs_sorting = True
     playlists = fetch_playlists(playlist_map)
-    result, overflow, remainder, queue_remainder = sort(playlist_map, playlists, "primary", "secondary")
+    result, overflow, remainder, queue_remainder = sort(playlist_map, playlists, category, filler_tier=filler_tier)
     cache.write_cache()
     assemble_local_playlists(
         primary_playlist_name='primary',
-        backlog_name='secondary',
+        backlog_name='backlog',
         queue_name='queue',
         playlist_map=playlist_map,
         result=result,
@@ -1180,20 +1202,11 @@ def import_queue(test=False):
     logger.write()
     logger.write()
     cache.write_cache()
-    clean_backlog(playlist_map['backlog'])
-    needs_sorting = False
+    clean_backlog(primary_id=playlist_map['primary'], backlog_id=playlist_map['backlog'])
+    logger.write()
 
 
-def main(test=False):
-    import_queue(test)
-
-
-main()
-# verify(skip_wait=True)
-# correct_playlists()
-
-# clean_backlog("PL8wvcc8NSIHIHFbnOfyXxHo2Q3UnlSpa4")
-
-# playlist_data = json.load(open("cache/outputs.json"))['primary']
-# playlist_name = "primary"
-# playlist_data = verify_local_vs_youtube(playlist_data, playlist_name, skip_wait=True)
+logger.write("--------------------------------------------")
+logger.write("ORGANIZATION COMPLETE")
+logger.write("--------------------------------------------")
+logger.write()
