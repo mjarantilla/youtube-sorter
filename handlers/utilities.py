@@ -61,7 +61,7 @@ class Logger:
             shutil.copyfile(self.file, ".".join([self.file,file_suffix]))
             self.initialize()
 
-    def write(self, msg="", tier=None):
+    def write(self, msg="", delim=False, header=False, tier=None):
         self.rename()
         if tier is None:
             tier = self.tier
@@ -70,6 +70,13 @@ class Logger:
         while tab_count < tier:
             prefix += "   "
             tab_count += 1
+        if header:
+            LogMessage(
+                msg="",
+                event_time_format=self.format,
+                logfile=self.file,
+                silent=self.silent
+            ).write()
         message = LogMessage(
             msg=str(prefix) + str(msg),
             event_time_format=self.format,
@@ -77,6 +84,13 @@ class Logger:
             silent=self.silent
         )
         message.write()
+        if delim:
+            LogMessage(
+                msg="",
+                event_time_format=self.format,
+                logfile=self.file,
+                silent=self.silent
+            ).write()
 
 
 class LogMessage:

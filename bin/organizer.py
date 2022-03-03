@@ -14,22 +14,18 @@ from time import sleep
 logger = Logger()
 logger.write("--------------------------------------------")
 logger.write("STARTING ORGANIZATION OF YOUTUBE PLAYLISTS")
-logger.write("--------------------------------------------")
-logger.write()
+logger.write("--------------------------------------------", delim=True)
 logger.write("Initializing caches and configs")
 cache = VideoCache()
 config = ConfigHandler()
 ranks = RanksHandler()
 client = YoutubeClientHandler('sorter.pickle')
-logger.write()
-logger.write("Initialization of objects complete")
-logger.write()
+logger.write("Initialization of objects complete", delim=True, header=True)
 
 
 # SORTING FUNCTIONS
 def assemble_local_playlists(primary_playlist_name, backlog_name, queue_name, playlist_map, result, backlog, remainder, queue_remainder):
-    logger.write()
-    logger.write("Adding to primary")
+    logger.write("Adding to primary", header=True)
     primary_playlist_id = playlist_map[primary_playlist_name]
     backlog_id = playlist_map[backlog_name]
     queue_id = playlist_map[queue_name]
@@ -64,8 +60,7 @@ def assemble_local_playlists(primary_playlist_name, backlog_name, queue_name, pl
 
         outputs[primary_playlist_name]['videos'].append(output_entry)
 
-    logger.write()
-    logger.write("Adding to backlog")
+    logger.write("Adding to backlog", header=True)
     i = 0
     for video in reversed(backlog):
         output_entry = {
@@ -132,8 +127,7 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
     for video in playlists['queue'].videos:
         queue_ids.append(video['contentDetails']['videoId'])
 
-    logger.write()
-    logger.write("SORTING primary tier videos in current playlists")
+    logger.write("SORTING primary tier videos in current playlists", header=True)
     playlists_to_include = {
         playlist_map['primary']: playlist_videos[playlist_map['primary']],
         playlist_map['queue']: playlist_videos[playlist_map['queue']]
@@ -146,8 +140,7 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
         subscriptions=subscriptions,
         cache=cache
     )
-    logger.write("DONE sorting primary tier videos")
-    logger.write()
+    logger.write("DONE sorting primary tier videos", delim=True)
 
     filler_in_primary = []
     all_filler = []
@@ -163,8 +156,7 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
             subscriptions=subscriptions,
             date_sorting=True
         )
-        logger.write("DONE sorting filler videos in queue and watch later")
-        logger.write()
+        logger.write("DONE sorting filler videos in queue and watch later", delim=True)
         logger.write("SORTING filler videos in current playlists")
         all_filler = determine_tier_videos(
             playlist_videos=playlists_to_include,
@@ -173,8 +165,7 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
             subscriptions=subscriptions,
             date_sorting=True
         )
-        logger.write("DONE sorting ALL filler videos")
-        logger.write()
+        logger.write("DONE sorting ALL filler videos", delim=True)
 
     combined = primary + filler_in_primary
 
@@ -191,11 +182,10 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
         if vid_id not in total_ids:
             queue_remainder.append(Video(id=vid_id, cache=cache, client=client))
 
-    logger.write()
-    logger.write("Total items: %i" % (len(result + overflow)))
+    logger.write("Total items: %i" % (len(result + overflow)), header=True)
     logger.write("Items in main playlist: %i" % len(result))
     logger.write("Items to be added to overflow: %i" % len(overflow))
-    logger.write("Items to be left in queue: %i" % len(queue_remainder))
+    logger.write("Items to be left in queue: %i" % len(queue_remainder), delim=True)
 
     return result, overflow, remainder, queue_remainder
 
@@ -389,8 +379,7 @@ def fetch_playlists(playlist_map):
     print_json(inputs, fp=inputs_fp)
     inputs_fp.close()
 
-    logger.write("DONE fetching all playlists.")
-    logger.write()
+    logger.write("DONE fetching all playlists.", delim=True)
     return playlists
 
 
@@ -538,10 +527,10 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
         """ Actual execution of the command """
         if not test:
             if command['action']:
-                logger.write("Executing command: %s" % command['action'], tier=log_tier)
                 vid_obj = Video(video['vid_id'], cache=cache, client=client)
                 if command['action'] == "update":
                     if not backlog and not queue:
+                        logger.write("Executing command: %s" % command['action'], tier=log_tier)
                         kwargs = {
                             'playlist_item_id': command['playlist_item_id'],
                             'playlist_id': command['to']['playlist'],
@@ -552,6 +541,7 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
                         sleep(0.2)
                         vid_obj.update_playlist_position(**kwargs)
                 elif command['action'] == "import":
+                    logger.write("Executing command: %s" % command['action'], tier=log_tier)
                     kwargs = {
                         'playlist_id': command['to']['playlist'],
                         'position': command['to']['position'],
@@ -652,7 +642,7 @@ def get_videos(playlists):
         playlist_handler = playlists[playlist]
         logger.write("Filtering invalid videos for %s" % playlist, tier=2)
         playlist_videos[playlist_handler.id] = filter_invalid_videos(get_playlist_videos(playlist_handler))
-    logger.write("DONE fetching video info")
+    logger.write("DONE fetching video info", delim=True)
     return playlist_videos
 
 
@@ -663,8 +653,7 @@ def get_channel_index(subscriptions):
         channel_info = subscriptions[channel_title]
         channel_id = channel_info['id']
         channel_index[channel_id] = channel_title
-    logger.write("DONE fetching channel subscriptions", tier=2)
-
+    logger.write("DONE fetching channel subscriptions", tier=2, delim=True)
     return channel_index
 
 
@@ -676,7 +665,7 @@ def sort_channels_by_tier(tier_name, subscriptions):
     for channel_name in channel_list:
         channel_id = subscriptions[channel_name]['id']
         sorted_channel_ids.append(channel_id)
-    logger.write("DONE sorting channel IDs by tier", tier=2)
+    logger.write("DONE sorting channel IDs by tier", tier=2, delim=True)
 
     return sorted_channel_ids
 
@@ -773,10 +762,8 @@ def verify(skip_wait=False):
         logger.write("Verifying Playlist %s" % str(playlist).capitalize(), tier=log_tier+1)
         playlist_data = outputs[playlist]
         corrections[playlist] = verify_local_vs_youtube(playlist_data=playlist_data, playlist_name=playlist, skip_wait=skip_wait)
-        logger.write("DONE", tier=log_tier+1)
-        logger.write()
+        logger.write("DONE", tier=log_tier+1, delim=True)
 
-    logger.write()
     corrections_fp = open(os.path.join(config.variables['CACHE_DIR'], 'corrections.json'), mode="w")
     print_json(corrections, fp=corrections_fp)
     corrections_fp.close()
@@ -851,7 +838,7 @@ def verify_local_vs_youtube(playlist_data, playlist_name='', skip_wait=False):
                 vid_data['vid_source'] = input_vid_data['vid_source']
             counter += 1
         iteration += 1
-    logger.write("DONE", tier=log_tier + 1)
+    logger.write("DONE", tier=log_tier + 1, delim=True)
     playlist_info['diff'] = False
 
     """ Might be unnecessary """
@@ -865,7 +852,7 @@ def verify_local_vs_youtube(playlist_data, playlist_name='', skip_wait=False):
         if expected_vid_data['vid_id'] is not None:
             playlist_info['videos'].append(expected_vid_data)
         i += 1
-    logger.write("DONE", tier=log_tier+1)
+    logger.write("DONE", tier=log_tier+1, delim=True)
 
     """ Count how many changes need to be made """
     playlist_info['corrections'] = count_corrections_needed(reference_playlist=reference_playlist, playlist=playlist,
@@ -877,6 +864,8 @@ def verify_local_vs_youtube(playlist_data, playlist_name='', skip_wait=False):
 
     if playlist_info['diff']:
         logger.write("Differences found", tier=log_tier)
+    else:
+        logger.write("No differences found", tier=log_tier, delim=True)
 
     return playlist_info
 
@@ -973,8 +962,7 @@ def count_corrections_needed(reference_playlist, playlist_id=None, playlist=None
             else:
                 logger.write("\t- %s" % title, tier=log_tier)
         logger.write()
-    logger.write("DONE making list of corrections")
-
+    logger.write("DONE making list of corrections", tier=log_tier, delim=True)
     playlist_info['actions'] = corrections
 
     return corrections
@@ -1085,11 +1073,13 @@ def correct(corrections, test=False):
     return False
 
 
-def correct_playlists(test=False):
+def correct_playlists(playlists, test=False):
     corrections = json.load(open(os.path.join(config.variables['CACHE_DIR'], 'corrections.json')))
-    for playlist_name in corrections:
-        playlist_data = corrections[playlist_name]
-        correct_playlist(playlist_name, playlist_data, test)
+    for playlist in playlists:
+        playlist_name = playlist['name']
+        if playlist_name in corrections:
+            playlist_data = corrections[playlist_name]
+            correct_playlist(playlist_name, playlist_data, test)
 
 
 def correct_playlist(playlist_name, playlist_data, test=False):
@@ -1103,8 +1093,7 @@ def correct_playlist(playlist_name, playlist_data, test=False):
         removals = playlist_data['corrections']['remove']
         logger.write("Beginning rearrangements of %s" % playlist_name)
         sequencer(inputs, outputs, removals, test=test)
-        logger.write("Rearrangements complete")
-        logger.write()
+        logger.write("Rearrangements complete", delim=True)
         playlist_data = verify_local_vs_youtube(playlist_data, playlist_name)
         diff = playlist_data['diff']
         for item in ['add', 'move', 'remove']:
@@ -1171,21 +1160,34 @@ def create_video_list_from_playlist_items(playlist_id, playlist_name, playlist_i
     return video_list
 
 
-def import_queue(category='primary', backlog='backlog', test=False):
-    playlist_map = {
-        'primary': ranks.data['playlist_ids'][category],
-        'queue': ranks.data['queues'][category],
-        'backlog': ranks.data['backlogs'][category]
-    }
+def import_queue(category='primary', test=False):
+    playlists = [
+        {
+            "name": "primary",
+            "id": ranks.data['playlist_ids'][category]
+        },
+        {
+            "name": "queue",
+            "id": ranks.data['queues'][category]
+        },
+        {
+            "name": "backlog",
+            "id": ranks.data['backlogs'][category]
+        }
+    ]
+    playlist_map = {}
+    for playlist in playlists:
+        playlist_map[playlist['name']] = playlist['id']
+
     filler_tier = ranks.data['fillers'][category] if category in ranks.data['fillers'] else None
 
-    playlists = fetch_playlists(playlist_map)
-    result, overflow, remainder, queue_remainder = sort(playlist_map, playlists, category, filler_tier=filler_tier)
+    fetched_playlists = fetch_playlists(playlist_map)
+    result, overflow, remainder, queue_remainder = sort(playlist_map, fetched_playlists, category, filler_tier=filler_tier)
     cache.write_cache()
     assemble_local_playlists(
-        primary_playlist_name='primary',
-        backlog_name='backlog',
-        queue_name='queue',
+        primary_playlist_name=playlists[0]['name'],
+        queue_name=playlists[1]['name'],
+        backlog_name=playlists[2]['name'],
         playlist_map=playlist_map,
         result=result,
         backlog=overflow,
@@ -1197,7 +1199,7 @@ def import_queue(category='primary', backlog='backlog', test=False):
 
     verify(skip_wait=True)
     cache.write_cache()
-    correct_playlists(test=test)
+    correct_playlists(playlists=playlists, test=test)
     cache.write_cache()
     logger.write()
     logger.write()
@@ -1208,5 +1210,4 @@ def import_queue(category='primary', backlog='backlog', test=False):
 
 logger.write("--------------------------------------------")
 logger.write("ORGANIZATION COMPLETE")
-logger.write("--------------------------------------------")
-logger.write()
+logger.write("--------------------------------------------", delim=True)
