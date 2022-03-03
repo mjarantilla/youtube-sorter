@@ -1102,6 +1102,7 @@ def correct_playlist(playlist_name, playlist_data, test=False):
 
 
 def clean_backlog(primary_id, backlog_id, test=False):
+    logger.write("Cleaning backlog", tier=1, header=True, delim=True)
     primary = YoutubePlaylist(id=primary_id, cache=cache, client=client)
     backlog = YoutubePlaylist(id=backlog_id, cache=cache, client=client)
     primary.get_playlist_items()
@@ -1110,6 +1111,7 @@ def clean_backlog(primary_id, backlog_id, test=False):
     primary_list = create_video_list_from_playlist_items(primary_id, primary.title, primary.videos)
 
     remove_backlog_duplicates(primary_list=primary_list, backlog_list=backlog_list, test=test)
+    logger.write("DONE cleaning backlog", tier=1, header=True)
 
 
 def remove_backlog_duplicates(primary_list, backlog_list, test=False):
@@ -1207,7 +1209,6 @@ def import_queue(category='primary', test=False):
     clean_backlog(primary_id=playlist_map['primary'], backlog_id=playlist_map['backlog'])
     logger.write()
 
-
-logger.write("--------------------------------------------")
-logger.write("ORGANIZATION COMPLETE")
-logger.write("--------------------------------------------", delim=True)
+    logger.write("--------------------------------------------")
+    logger.write("ORGANIZATION COMPLETE")
+    logger.write("--------------------------------------------", delim=True)
