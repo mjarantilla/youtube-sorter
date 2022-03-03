@@ -11,3 +11,4 @@ ranks.json
 subscriptions.json
 cache/*
 config.json
+private.json
