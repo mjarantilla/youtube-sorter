@@ -22,6 +22,7 @@ class Video:
         self.channel_id = self.data['snippet']['channelId']
         self.title = self.data['snippet']['title']
         self.metadata = None
+        self.duration = self._get_duration()
 
     def _check_if_private(self):
         # Load data about videos marked "private" on YouTube
@@ -36,6 +37,27 @@ class Video:
                 return True
 
         return False
+
+    def _get_duration(self):
+        duration = self.data['contentDetails']['duration'].replace("P", "").replace("T", "")
+        days = 0
+        hours = 0
+        minutes = 0
+        seconds = 0
+        if 'D' in duration:
+            days, duration = duration.split('D')
+        if 'H' in duration:
+            hours, duration = duration.split('H')
+        if 'M' in duration:
+            minutes, duration = duration.split('M')
+        if 'S' in duration:
+            seconds, duration = duration.split('S')
+
+        hours = int(days) * 24 + int(hours)
+        minutes = int(hours) * 60 + int(minutes)
+        seconds = int(minutes) * 60 + int(seconds)
+
+        return seconds
 
     def add_to_playlist(self, playlist_id, position=0, test=False):
         """
