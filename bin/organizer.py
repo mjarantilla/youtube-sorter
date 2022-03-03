@@ -262,28 +262,7 @@ def check_validity(video):
     max_duration_sec = convert_to_seconds(config.variables['VIDEO_MAX_DURATION'])
 
     if not video.private:
-        duration = video.data['contentDetails']['duration'].replace("P", "").replace("T", "")
-        days = 0
-        hours = 0
-        minutes = 0
-        seconds = 0
-        if 'D' in duration:
-            days_list = duration.split('D')
-            hours = days * 24
-            duration = days_list[1]
-        if 'H' in duration:
-            hours_list = duration.split('H')
-            hours = hours + int(hours_list[0])
-            minutes = hours * 60
-            duration = hours_list[1]
-        if 'M' in duration:
-            minutes_list = duration.split('M')
-            minutes = minutes + int(minutes_list[0])
-            seconds = minutes * 60
-            duration = minutes_list[1]
-        if 'S' in duration:
-            seconds_list = duration.split('S')
-            seconds = seconds + int(seconds_list[0])
+        seconds = video.duration
 
         if min_duration_sec < seconds < max_duration_sec:
             return True
@@ -1114,6 +1093,27 @@ def clean_backlog(primary_id, backlog_id, test=False):
     logger.write("DONE cleaning backlog", tier=1, header=True)
 
 
+def remove_shorts(playlist, min_duration_sec=None, test=False):
+    logger.write("Removing shorts", tier=1, header=True, delim=True)
+    min_duration = 0
+    if not min_duration_sec:
+        config_var = config.variables['VIDEO_MIN_DURATION']
+        if 'DAYS' in config_var:
+            min_duration += config_var['DAYS'] * 24 * 60 * 60
+        if 'HOURS' in config_var:
+            min_duration += config_var['HOURS'] * 60 * 60
+        if 'MINUTES' in config_var:
+            min_duration += config_var['MINUTES'] * 60
+        if 'SECONDS' in config_var:
+            min_duration += config_var['SECONDS']
+
+    for playlist_item in playlist.videos:
+        video = Video(id=playlist_item['contentDetails']['videoId'], cache=cache)
+        if video.duration < min_duration:
+            video.remove_from_playlist(playlist_item_id=playlist_item['id'], test=test)
+    logger.write("DONE removing shorts", tier=1, header=True, delim=True)
+
+
 def remove_backlog_duplicates(primary_list, backlog_list, test=False):
     # duplicates = identify_duplicates(backlog_id, backlog_list)
     # remove_duplicates(duplicates, test)
@@ -1184,6 +1184,9 @@ def import_queue(category='primary', test=False):
     filler_tier = ranks.data['fillers'][category] if category in ranks.data['fillers'] else None
 
     fetched_playlists = fetch_playlists(playlist_map)
+
+    remove_shorts(fetched_playlists['queue'], test=test)
+
     result, overflow, remainder, queue_remainder = sort(playlist_map, fetched_playlists, category, filler_tier=filler_tier)
     cache.write_cache()
     assemble_local_playlists(
