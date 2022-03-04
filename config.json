@@ -35,17 +35,9 @@
   "SEARCH_INTERVAL": 60,
   "SORT_TIMES": [],
   "TEST_MODE": false,
-  "TIER_PLAYLISTS": {
-    "0": "PL8wvcc8NSIHJQRIlBOt5IpzFmNRnAjl8q",
-    "1": "PL8wvcc8NSIHJRMpZbtgR2fA2ytFtlJbuW",
-    "2": "PL8wvcc8NSIHI2k8ZUsPGNFIyWv7hfZ-lu",
-    "3": "PL8wvcc8NSIHKfdL24NQKyNRQpBh6aS9DJ",
-    "4": "PL8wvcc8NSIHJIyWSxsYKbqMre8U0AbXW9",
-    "5": "PL8wvcc8NSIHJ8x87Q1c-8HERzLZHVe57s",
-    "6": "PL8wvcc8NSIHKevccqW-z5OH-ks-K2dDp7"
-  },
   "FILLER_LENGTH": 10,
   "FILLER_INDEX": "2",
+  "TIER_PLAYLISTS": {},
 
-  "CACHE_DIR": "/Users/mjaranti/git/youtube-sorter/cache"
+  "CACHE_DIR": "/home/pi/git/youtube-sorter/cache"
 }
