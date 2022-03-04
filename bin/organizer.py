@@ -602,7 +602,7 @@ def remove_duplicates(duplicates, test=False):
             dupes = duplicates[playlist_id][vid_id]
             for dupe in dupes:
                 index, vid_data = dupe
-                logger.write("%s at index %s" % (vid_data['title'], index), tier=2)
+                logger.write("index %s:\t %s" % (index, vid_data['title']), tier=2)
                 vid_id = vid_data['vid_id']
                 video = Video(vid_id, cache=cache, client=client)
 
