@@ -1,7 +1,7 @@
 import os
 import os.path
 import pickle
-import google_auth_oauthlib.flow
+import time
 import googleapiclient.discovery
 import googleapiclient.errors
 from google_auth_oauthlib import flow
@@ -64,7 +64,11 @@ class YoutubeClientHandler:
 
     def execute(self, request_object):
         logger.write("Querying Youtube: %s %s" % (request_object.method, request_object.methodId))
-        response = request_object.execute()
+        try:
+            response = request_object.execute()
+        except googleapiclient.errors.HttpError as err:
+            response = err.resp
+            logger.write(response)
 
         return response
 

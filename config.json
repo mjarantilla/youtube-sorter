@@ -28,6 +28,9 @@
     "MINUTES": 30,
     "HOURS": 1
   },
+  "VIDEO_MIN_DURATION": {
+    "MINUTES": 1
+  },
   "LAST_TIER": "5",
   "SEARCH_INTERVAL": 60,
   "SORT_TIMES": [],
