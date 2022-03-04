@@ -1111,6 +1111,8 @@ def remove_shorts(playlist, min_duration_sec=None, test=False):
         video = Video(id=playlist_item['contentDetails']['videoId'], cache=cache)
         if video.duration < min_duration:
             video.remove_from_playlist(playlist_item_id=playlist_item['id'], test=test)
+
+    cache.write_cache()
     logger.write("DONE removing shorts", tier=1, header=True, delim=True)
 
 

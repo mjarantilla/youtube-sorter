@@ -18,6 +18,8 @@ class Video:
         self.private = self._check_if_private()
         self.client = YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
         self.data = self.cache.check_cache(self.id, update=True)
+
+        assert self.data, "No video data found: %s" % self.id
         self.channel_name = self.data['snippet']['channelTitle']
         self.channel_id = self.data['snippet']['channelId']
         self.title = self.data['snippet']['title']
