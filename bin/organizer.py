@@ -1095,7 +1095,7 @@ def clean_backlog(primary_id, backlog_id, test=False):
     logger.write("DONE cleaning backlog", tier=1, header=True)
 
 
-def remove_shorts(playlist, min_duration_sec=None, test=False):
+def remove_shorts(playlist_handler, min_duration_sec=None, test=False):
     logger.write("Removing shorts", tier=1, header=True, delim=True)
     min_duration = 0
     if not min_duration_sec:
@@ -1109,10 +1109,17 @@ def remove_shorts(playlist, min_duration_sec=None, test=False):
         if 'SECONDS' in config_var:
             min_duration += config_var['SECONDS']
 
-    for playlist_item in playlist.videos:
+    indexes = []
+    index = 0
+    for playlist_item in playlist_handler.videos:
         video = Video(id=playlist_item['contentDetails']['videoId'], cache=cache)
         if video.duration < min_duration:
             video.remove_from_playlist(playlist_item_id=playlist_item['id'], test=test)
+            indexes.append(index)
+        index += 1
+
+    for index in indexes:
+        playlist_handler.videos.pop(index)
 
     cache.write_cache()
     logger.write("DONE removing shorts", tier=1, header=True, delim=True)
