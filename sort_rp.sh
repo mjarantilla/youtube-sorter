@@ -9,7 +9,7 @@ for i in {1..59}; do
         if [[ -f ${YOUTUBE_HOME}/import_queue ]] || [[ -f ${YOUTUBE_HOME}/import_queue.txt ]] || [[ -f ${DROPBOX_HOME}/import_queue ]] || [[ -f ${DROPBOX_HOME}/import_queue.txt ]]; then
             pushd ${YOUTUBE_HOME}
             touch ${YOUTUBE_HOME}/active
-            python3 ${YOUTUBE_HOME}/sorter.py
+            python3 ${YOUTUBE_HOME}/import_all.py
             if [[ -f ${YOUTUBE_HOME}/import_queue ]]; then
                 echo "Removing import_queue from YOUTUBE_HOME"
                 rm ${YOUTUBE_HOME}/import_queue
