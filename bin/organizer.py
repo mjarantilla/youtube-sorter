@@ -435,7 +435,7 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
 
     """ Begin sorting/importing """
     for video in ending_playlist_videos:
-        assert 'vid_source' in video and video['vid_source'], "'vid_source' not in video data: %s" % video['snippet']['title']
+        assert 'vid_source' in video and video['vid_source'], print_json(video)
 
         source_playlist_id = video['vid_source']['source_playlist_id']
         source_position = video['vid_source']['source_playlist_position']
