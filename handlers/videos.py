@@ -124,7 +124,7 @@ class Video:
         for item in playlist.videos:
             if item['contentDetails']['videoId'] == self.id:
                 instances.append(item)
-        logger.write("%i instance(s) found of %s" % (len(instances), self.title))
+        # logger.write("%i instance(s) found of %s" % (len(instances), self.title))
 
         if len(instances) > 0:
             if not verify_only:
