@@ -1120,7 +1120,7 @@ def remove_shorts(playlist_handler, min_duration_sec=None, test=False):
             indexes.append(index)
         index += 1
 
-    for index in indexes:
+    for index in reversed(indexes):
         playlist_handler.videos.pop(index)
 
     cache.write_cache()
