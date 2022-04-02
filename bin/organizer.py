@@ -134,6 +134,7 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
     }
     if filler_tier is not None:
         playlists_to_include[playlist_map[filler_tier]] = playlist_videos[playlist_map[filler_tier]]
+
     primary = determine_tier_videos(
         playlist_videos=playlists_to_include,
         tier_name=primary_tier,
@@ -142,21 +143,21 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
     )
     logger.write("DONE sorting primary tier videos", delim=True)
 
-    filler_in_primary = []
+    # filler_in_primary = []
     all_filler = []
     if filler_tier is not None:
-        logger.write("SORTING filler videos in queue and watch later playlists")
-        filler_in_primary = determine_tier_videos(
-            playlist_videos={
-                playlist_map[primary_tier]: playlist_videos[playlist_map[primary_tier]],
-                playlist_map['queue']: playlist_videos[playlist_map['queue']]
-            },
-            tier_name=filler_tier,
-            cache=cache,
-            subscriptions=subscriptions,
-            date_sorting=True
-        )
-        logger.write("DONE sorting filler videos in queue and watch later", delim=True)
+        # logger.write("SORTING filler videos in queue and watch later playlists")
+        # filler_in_primary = determine_tier_videos(
+        #     playlist_videos={
+        #         playlist_map[primary_tier]: playlist_videos[playlist_map[primary_tier]],
+        #         playlist_map['queue']: playlist_videos[playlist_map['queue']]
+        #     },
+        #     tier_name=filler_tier,
+        #     cache=cache,
+        #     subscriptions=subscriptions,
+        #     date_sorting=True
+        # )
+        # logger.write("DONE sorting filler videos in queue and watch later", delim=True)
         logger.write("SORTING filler videos in current playlists")
         all_filler = determine_tier_videos(
             playlist_videos=playlists_to_include,
@@ -167,7 +168,8 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
         )
         logger.write("DONE sorting ALL filler videos", delim=True)
 
-    combined = primary + filler_in_primary
+    # combined = primary + filler_in_primary
+    combined = primary
 
     result, overflow, remainder = calculate_overflow(original_playlist=combined, filler=all_filler, max_len=max_length,
                                                      min_len=min_length, max_fill=max_filler)
@@ -1098,7 +1100,7 @@ def clean_backlog(primary_id, backlog_id, test=False):
 
 
 def remove_shorts(playlist_handler, min_duration_sec=None, test=False):
-    logger.write("Removing shorts", tier=1, header=True, delim=True)
+    logger.write("Removing shorts from %s" % playlist_handler.title, tier=1, header=True, delim=True)
     min_duration = 0
     if not min_duration_sec:
         config_var = config.variables['VIDEO_MIN_DURATION']
@@ -1115,7 +1117,7 @@ def remove_shorts(playlist_handler, min_duration_sec=None, test=False):
     index = 0
     for playlist_item in playlist_handler.videos:
         video = Video(id=playlist_item['contentDetails']['videoId'], cache=cache)
-        if video.duration < min_duration:
+        if video.duration < min_duration or not video.data:
             video.remove_from_playlist(playlist_item_id=playlist_item['id'], test=test)
             indexes.append(index)
         index += 1
@@ -1198,7 +1200,9 @@ def import_queue(category='primary', test=False):
 
     fetched_playlists = fetch_playlists(playlist_map)
 
-    remove_shorts(fetched_playlists['queue'], test=test)
+    for fetched_playlist_name in fetched_playlists:
+        fetched_playlist = fetched_playlists[fetched_playlist_name]
+        remove_shorts(fetched_playlist, test=test)
 
     result, overflow, remainder, queue_remainder = sort(playlist_map, fetched_playlists, category, filler_tier=filler_tier)
     cache.write_cache()
