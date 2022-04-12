@@ -26,7 +26,7 @@ class YoutubePlaylist:
         logger.write("Getting playlist name")
         request = self.client_handler.client.playlists().list(**params)
         response = self.client_handler.execute(request)
-        items = response['items']
+        items = response['items'] if 'items' in response else []
         result = {}
         for item in items:
             item_id = item['id']
