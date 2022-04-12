@@ -265,7 +265,7 @@ def check_validity(video):
 
     if not video.private:
         seconds = video.duration
-
+        logger.write(video.duration)
         if min_duration_sec < seconds < max_duration_sec:
             return True
 
