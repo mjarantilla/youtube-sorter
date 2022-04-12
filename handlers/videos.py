@@ -25,9 +25,11 @@ class Video:
             self.metadata = None
             self.duration = self._get_duration()
         except TypeError as e:
+            logger.write(id)
             logger.write(kwargs)
             raise
         except KeyError as e:
+            logger.write(id)
             logger.write(kwargs)
             raise
 
