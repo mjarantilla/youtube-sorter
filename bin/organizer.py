@@ -1201,7 +1201,8 @@ def import_queue(category='primary', test=False):
 
     for fetched_playlist_name in fetched_playlists:
         fetched_playlist = fetched_playlists[fetched_playlist_name]
-        remove_shorts(fetched_playlist, test=test)
+        if fetched_playlist_name == 'queue':
+            remove_shorts(fetched_playlist, test=test)
 
     result, overflow, remainder, queue_remainder = sort(playlist_map, fetched_playlists, category, filler_tier=filler_tier)
     cache.write_cache()
