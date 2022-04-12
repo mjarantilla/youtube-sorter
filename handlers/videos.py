@@ -12,26 +12,18 @@ class Video:
 
         @param id:  The YouTube-assigned unique ID for the video
         """
-        try:
-            self.id = id
-            self.config = ConfigHandler() if 'config' not in kwargs else kwargs['config']
-            self.cache = cache
-            self.private = self._check_if_private()
-            self.client = YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
-            self.data = self.cache.check_cache(self.id, update=True)
+        self.id = id
+        self.config = ConfigHandler() if 'config' not in kwargs else kwargs['config']
+        self.cache = cache
+        self.private = self._check_if_private()
+        self.client = YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
+        self.data = self.cache.check_cache(self.id, update=True)
+        if self.data:
             self.channel_name = self.data['snippet']['channelTitle']
             self.channel_id = self.data['snippet']['channelId']
             self.title = self.data['snippet']['title']
             self.metadata = None
             self.duration = self._get_duration()
-        except TypeError as e:
-            logger.write(id)
-            logger.write(kwargs)
-            raise
-        except KeyError as e:
-            logger.write(id)
-            logger.write(kwargs)
-            raise
 
     def _check_if_private(self):
         # Load data about videos marked "private" on YouTube
