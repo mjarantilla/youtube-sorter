@@ -147,7 +147,7 @@ class VideoCache(MapCache):
 
         private = False
 
-        video = response_obj['items'][0] if len(response_obj['items']) > 0 else None
+        video = response_obj['items'][0] if 'items' in response_obj and len(response_obj['items']) > 0 else None
         if not video:
             private_videos.append(vid_id)
             private = True
