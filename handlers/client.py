@@ -2,6 +2,7 @@ import os
 import os.path
 import pickle
 import time
+import json
 import googleapiclient.discovery
 import googleapiclient.errors
 from google_auth_oauthlib import flow
@@ -73,8 +74,11 @@ class YoutubeClientHandler:
             logger.write(response)
             logger.write()
             logger.write("Content")
-            logger.write(str(err.content, encoding="utf-8"))
-            if "you have exceeded your" in content and "quota" in content:
+            content = json.loads(str(err.content, encoding="utf-8"))
+            logger.write(content)
+            logger.write(content['error']['message'])
+            logger.write()
+            if "you have exceeded your" in content['error']['message'] and "quota" in content['error']['message']:
                 logger.write("Quota exceeded")
                 raise
             else:
