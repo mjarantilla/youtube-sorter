@@ -1116,7 +1116,7 @@ def remove_shorts(playlist_handler, min_duration_sec=None, test=False):
     index = 0
     for playlist_item in playlist_handler.videos:
         video = Video(id=playlist_item['contentDetails']['videoId'], cache=cache)
-        if video.duration < min_duration or not video.data:
+        if not video.data or video.duration < min_duration:
             video.remove_from_playlist(playlist_item_id=playlist_item['id'], test=test)
             indexes.append(index)
         index += 1
