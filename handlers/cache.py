@@ -1,6 +1,7 @@
 from handlers.utilities import ConfigHandler, Logger, print_json
 from handlers.client import YoutubeClientHandler
 import os
+import shutil
 import json
 import datetime
 
@@ -23,6 +24,9 @@ class Cache:
         self.config = ConfigHandler()
         self.dir = self.config.variables['CACHE_DIR']
         self.file = os.path.join(self.dir, file)
+        datetimestamp = datetime.datetime.now().timestamp()
+        self.backup = os.path.join(self.dir, "%s.backup.%s" % (file, datetimestamp))
+        shutil.copy(self.file, self.backup)
         self.data = None
         self.client = client if client is not None else YoutubeClientHandler()
 
