@@ -24,6 +24,7 @@ def is_private(vid_id):
         id=vid_id
     )
     response = client_handler.execute(request)
+    logger.write("Checking %s" % vid_id, tier=1)
     if len(response['items']) == 0:
         return True
     else:
