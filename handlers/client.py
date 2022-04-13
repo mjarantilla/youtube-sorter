@@ -67,16 +67,17 @@ class YoutubeClientHandler:
         try:
             response = request_object.execute()
         except googleapiclient.errors.HttpError as err:
+            content = err.content
             response = err.resp
             logger.write("Response:")
             logger.write(response)
             logger.write()
             logger.write("Content")
             logger.write(err.content)
-            logger.write()
-            logger.write("Error Details")
-            logger.write(err.error_details)
-            raise
+            if "you have exceeded your" in content and "quota" in content:
+                raise
+            else:
+                raise
 
         return response
 
