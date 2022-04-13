@@ -18,6 +18,11 @@ class Video:
         self.private = self._check_if_private()
         self.client = YoutubeClientHandler() if 'client' not in kwargs else kwargs['client']
         self.data = self.cache.check_cache(self.id, update=True)
+        self.title = None
+        self.channel_id = None
+        self.channel_name = None
+        self.metadata = None
+        self.duration = None
         if self.data:
             self.channel_name = self.data['snippet']['channelTitle']
             self.channel_id = self.data['snippet']['channelId']
@@ -179,7 +184,7 @@ class Video:
                 response = self.client.execute(request)
                 self.cache.remove_playlist_membership(self.id, playlist_id)
 
-            logger.write("Removed from playlist: %s" % self.title)
+            logger.write("Removed from playlist: %s" % self.title if self.title else self.id)
 
             return response
 
@@ -199,7 +204,7 @@ class Video:
                         response = self.client.execute(request)
                         self.cache.remove_playlist_membership(self.id, playlist_id)
 
-                    logger.write("Removed from playlist: %s" % self.title)
+                    logger.write("Removed from playlist: %s" % self.title if self.title else self.id)
 
                     return response
         else:
