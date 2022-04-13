@@ -44,7 +44,7 @@ deduped_videos = remove_duplicates(private_videos)
 newlist = []
 unprivate = []
 for vid_id in deduped_videos:
-    if is_private(vid_id)[0]:
+    if is_private(vid_id):
         newlist.append(vid_id)
     else:
         unprivate.append(vid_id)
