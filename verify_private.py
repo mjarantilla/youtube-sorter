@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from handlers.utilities import ConfigHandler, print_json, Logger
 from handlers.client import YoutubeClientHandler
 import json
