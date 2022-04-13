@@ -69,6 +69,7 @@ class YoutubeClientHandler:
         except googleapiclient.errors.HttpError as err:
             response = err.resp
             logger.write(response)
+            raise
 
         return response
 
