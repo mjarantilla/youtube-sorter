@@ -8,6 +8,7 @@ import shutil
 
 
 def remove_duplicates(private_videos):
+    logger.write("Removing duplicates")
     tmp_list = []
     for vid_id in private_videos:
         if vid_id not in tmp_list:
@@ -43,6 +44,7 @@ deduped_videos = remove_duplicates(private_videos)
 #
 newlist = []
 unprivate = []
+logger.write("Checking if videos are actually private")
 for vid_id in deduped_videos:
     if is_private(vid_id):
         newlist.append(vid_id)
