@@ -40,7 +40,7 @@ newfile_fp = open(tmp_file, mode='w')
 private_vids_data = json.load(private_fp)
 private_videos = private_vids_data['private_videos']
 deduped_videos = remove_duplicates(private_videos)
-
+#
 newlist = []
 unprivate = []
 for vid_id in deduped_videos:
