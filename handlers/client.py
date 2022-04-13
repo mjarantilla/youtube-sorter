@@ -74,14 +74,10 @@ class YoutubeClientHandler:
             logger.write(response)
             logger.write()
             logger.write("Content")
+            logger.write(str(err.content, encoding="utf-8"))
             content = json.loads(str(err.content, encoding="utf-8"))
-            logger.write(content)
-            logger.write(content['error']['message'])
-            logger.write()
             if "you have exceeded your" in content['error']['message'] and "quota" in content['error']['message']:
                 logger.write("Quota exceeded")
-                raise
-            else:
                 raise
 
         return response
