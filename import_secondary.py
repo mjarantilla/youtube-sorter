@@ -4,7 +4,7 @@ from bin import organizer
 
 
 def main(test=False):
-    organizer.import_queue(category="backlog", test=test)
+    organizer.import_queue(category="backlog", test=test, max_length=100)
 
 
 main()
