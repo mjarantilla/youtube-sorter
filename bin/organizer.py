@@ -92,7 +92,7 @@ def assemble_local_playlists(primary_playlist_name, backlog_name, queue_name, pl
     outputs_fp.close()
 
 
-def sort(playlist_map, playlists, primary_tier, filler_tier=None, max_length: int=None, filler_length: int=None):
+def sort(playlist_map, playlists, primary_tier, filler_tier=None, max_length: int=None, filler_length: int=None, date_sorting: bool=True):
     """
 
     @param playlist_map:
@@ -139,7 +139,8 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None, max_length: in
         playlist_videos=playlists_to_include,
         tier_name=primary_tier,
         subscriptions=subscriptions,
-        cache=cache
+        cache=cache,
+        date_sorting=date_sorting
     )
     logger.write("DONE sorting primary tier videos", delim=True)
 
@@ -1176,7 +1177,7 @@ def create_video_list_from_playlist_items(playlist_id, playlist_name, playlist_i
     return video_list
 
 
-def import_queue(category='primary', test=False, max_length: int=None, filler_length: int=None):
+def import_queue(category='primary', test=False, max_length: int=None, filler_length: int=None, date_sorting: bool=False):
     playlists = [
         {
             "name": "primary",
@@ -1210,7 +1211,8 @@ def import_queue(category='primary', test=False, max_length: int=None, filler_le
         category,
         filler_tier=filler_tier,
         max_length=max_length,
-        filler_length=filler_length
+        filler_length=filler_length,
+        date_sorting=date_sorting
     )
     cache.write_cache()
     assemble_local_playlists(
