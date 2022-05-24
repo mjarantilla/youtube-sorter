@@ -92,7 +92,7 @@ def assemble_local_playlists(primary_playlist_name, backlog_name, queue_name, pl
     outputs_fp.close()
 
 
-def sort(playlist_map, playlists, primary_tier, filler_tier=None):
+def sort(playlist_map, playlists, primary_tier, filler_tier=None, max_length: int=None, filler_length: int=None):
     """
 
     @param playlist_map:
@@ -115,9 +115,9 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None):
     subs_fp.close()
 
     logger.write("Setting max and min lengths")
-    max_length = config.variables['AUTOLIST_MAX_LENGTH']
+    max_length = config.variables['AUTOLIST_MAX_LENGTH'] if not max_length else max_length
     min_length = math.ceil(max_length / 2)
-    max_filler = config.variables['FILLER_LENGTH']
+    max_filler = config.variables['FILLER_LENGTH'] if not filler_length else filler_length
 
     logger.write("Initializing playlists")
 
@@ -1176,7 +1176,7 @@ def create_video_list_from_playlist_items(playlist_id, playlist_name, playlist_i
     return video_list
 
 
-def import_queue(category='primary', test=False):
+def import_queue(category='primary', test=False, max_length: int=None, filler_length: int=None):
     playlists = [
         {
             "name": "primary",
@@ -1204,7 +1204,14 @@ def import_queue(category='primary', test=False):
         if fetched_playlist_name == 'queue':
             remove_shorts(fetched_playlist, test=test)
 
-    result, overflow, remainder, queue_remainder = sort(playlist_map, fetched_playlists, category, filler_tier=filler_tier)
+    result, overflow, remainder, queue_remainder = sort(
+        playlist_map,
+        fetched_playlists,
+        category,
+        filler_tier=filler_tier,
+        max_length=max_length,
+        filler_length=filler_length
+    )
     cache.write_cache()
     assemble_local_playlists(
         primary_playlist_name=playlists[0]['name'],
