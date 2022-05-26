@@ -64,7 +64,7 @@ class YoutubeClientHandler:
         return youtube
 
     def execute(self, request_object):
-        logger.write("Querying Youtube: %s %s" % (request_object.method, request_object.methodId))
+        # logger.write("Querying Youtube: %s %s" % (request_object.method, request_object.methodId))
         try:
             response = request_object.execute()
         except googleapiclient.errors.HttpError as err:

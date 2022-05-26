@@ -50,12 +50,13 @@ class YoutubePlaylist:
         self.videos = response['items']
 
         while 'nextPageToken' in response:
-            logger.write("Fetching page %i" % page)
+            # logger.write("Fetching page %i" % page)
             kwargs['pageToken'] = response['nextPageToken']
             request = self.client_handler.client.playlistItems().list(**kwargs)
             response = self.client_handler.execute(request)
             self.videos = self.videos + response['items']
             page += 1
+        logger.write("Fetched %i page(s)" % page)
         self.update_video_cache()
         logger.write("DONE")
         logger.write()

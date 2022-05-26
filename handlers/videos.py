@@ -121,6 +121,7 @@ class Video:
 
         assert playlist_id or playlist_handler, "Must pass either a playlist_id or playlist_handler"
 
+        logger.write("Checking playlist membership for %s" % self.title)
         playlist = YoutubePlaylist(id=playlist_id, cache=self.cache, client=self.client) if playlist_handler is None else playlist_handler
         if len(playlist.videos) == 0:
             playlist.get_playlist_items()
@@ -142,6 +143,9 @@ class Video:
         else:
             if not verify_only:
                 self.cache.remove_playlist_membership(self.id, playlist_id)
+
+        logger.write("DONE checking playlist membership in %s for %s: %s" % (playlist.title, self.title, len(instances) > 0))
+        logger.write()
 
         return instances
 

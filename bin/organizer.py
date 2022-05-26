@@ -212,7 +212,10 @@ def determine_tier_videos(playlist_videos, tier_name, subscriptions, date_sortin
     for playlist_id in playlist_videos:
         combined_unsorted += playlist_videos[playlist_id]
     combined_unsorted = sort_by_date(combined_unsorted)
+    logger.write("DONE Combining playlist videos", tier=1)
+    logger.write()
 
+    logger.write("Sorting combined videos", tier=1)
     combined_sorted = []
     if not date_sorting:
         # Sorts the videos by their published date and then by their channel IDs
@@ -233,6 +236,7 @@ def determine_tier_videos(playlist_videos, tier_name, subscriptions, date_sortin
             channel_id = video.data['snippet']['channelId']
             if channel_id in sorted_channel_ids:
                 combined_sorted.append(video)
+    logger.write("DONE sorting combined videos", tier=1)
 
     return combined_sorted
 
