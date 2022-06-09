@@ -67,9 +67,8 @@ def organize_no_sort():
         vid.check_playlist_membership(queue_playlist_id)
         queue_playlist_item = vid.data['playlist_membership'][queue_playlist_id]
 
-        if not vid.check_playlist_membership(secondary_playlist_id):
-            vid.add_to_playlist(secondary_playlist_id, 0)
-        vid.remove_from_playlist(queue_playlist_id,playlist_item_id=queue_playlist_item['playlist_item_id'])
+        vid.add_to_playlist(secondary_playlist_id, 0)
+        vid.remove_from_playlist(queue_playlist_id, playlist_item_id=queue_playlist_item['playlist_item_id'])
 
 organize_no_sort()
 
