@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3.6
+#!/usr/bin/env python3
 from handlers.ranks import RanksHandler
 from handlers.subscriptions import SubscriptionsHandler
 from handlers.utilities import ConfigHandler
