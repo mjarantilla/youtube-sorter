@@ -165,7 +165,7 @@ def sort(playlist_map, playlists, primary_tier, filler_tier=None, max_length: in
             tier_name=filler_tier,
             cache=cache,
             subscriptions=subscriptions,
-            date_sorting=True
+            date_sorting=False
         )
         logger.write("DONE sorting ALL filler videos", delim=True)
 
