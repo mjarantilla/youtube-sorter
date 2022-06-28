@@ -232,7 +232,7 @@ def determine_tier_videos(playlist_videos, tier_name, subscriptions, date_sortin
                 for video in channel_video_map[channel_id]:
                     combined_sorted.append(video)
     else:
-        for video in combined_unsorted:
+        for video in combined_unsorted.reverse():
             channel_id = video.data['snippet']['channelId']
             if channel_id in sorted_channel_ids:
                 combined_sorted.append(video)
