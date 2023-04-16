@@ -160,7 +160,7 @@ def print_playlist_videos(playlist_id):
     print()
     print("  CSV")
     for video in videos:
-        print("\"{}\",\"{}\"".format(video[0], video[1]))
+        print("\"{}\"\t\"{}\"".format(video[0], video[1]))
     print()
 
 
