@@ -117,7 +117,7 @@ def create_playlist_map(playlists):
     return playlist_map
 
 
-def print_playlist_videos(playlist_id):
+def print_playlist_videos(playlist_name, playlist_id):
     playlist = YoutubePlaylist(playlist_id, cache=cache)
     playlist.get_playlist_items()
     channel_dict = {}
@@ -160,7 +160,7 @@ def print_playlist_videos(playlist_id):
     print()
     print("  CSV")
     for video in videos:
-        print("\"{}\",\"{}\"".format(video[0], video[1]))
+        print("\"{}\"\t\"{}\"\t\"{}\"".format(playlist_name, video[0], video[1]))
     print()
 
 
@@ -175,7 +175,7 @@ def main():
     for playlist in playlist_map:
         print("======================================================")
         print("Playlist: {}".format(playlist))
-        print_playlist_videos(playlist_map[playlist])
+        print_playlist_videos(playlist, playlist_map[playlist])
 
 
 main()
