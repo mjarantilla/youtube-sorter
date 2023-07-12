@@ -372,7 +372,7 @@ def fetch_playlists(playlist_map):
 
 
 # COMMAND FUNCTIONS
-def sequencer(starting_playlist, ending_playlist, removals, test=False):
+def sequencer(starting_playlist, ending_playlist, removals, date_sorting=False, test=False):
     def test_seq():
         counter = 0
         logger.write("Original\t\tPrevious\t\t|Current\t\t\tEndstate", tier=1)
@@ -536,9 +536,10 @@ def sequencer(starting_playlist, ending_playlist, removals, test=False):
                     logger.write("Executing command: %s" % command['action'], tier=log_tier)
                     kwargs = {
                         'playlist_id': command['to']['playlist'],
-                        'position': command['to']['position'],
                         'test': test
                     }
+                    if not date_sorting:
+                        kwargs['position'] = command['to']['position'],
                     logger.write("Importing into position %s: %s" % (command['to']['position'], vid_obj.title), tier=1)
                     sleep(0.2)
                     vid_obj.add_to_playlist(**kwargs)
@@ -1074,7 +1075,7 @@ def correct_playlists(playlists, test=False):
             correct_playlist(playlist_name, playlist_data, test)
 
 
-def correct_playlist(playlist_name, playlist_data, test=False):
+def correct_playlist(playlist_name, playlist_data, date_sorting=False, test=False):
     diff = playlist_data['diff']
     iter = 0
     iter_limit = 5
@@ -1084,7 +1085,7 @@ def correct_playlist(playlist_name, playlist_data, test=False):
         outputs = playlist_data
         removals = playlist_data['corrections']['remove']
         logger.write("Beginning rearrangements of %s" % playlist_name)
-        sequencer(inputs, outputs, removals, test=test)
+        sequencer(inputs, outputs, removals, date_sorting=date_sorting, test=test)
         logger.write("Rearrangements complete", delim=True)
         playlist_data = verify_local_vs_youtube(playlist_data, playlist_name)
         diff = playlist_data['diff']
@@ -1237,7 +1238,7 @@ def import_queue(category='primary', test=False, max_length: int=None, filler_le
 
     verify(skip_wait=True)
     cache.write_cache()
-    correct_playlists(playlists=playlists, test=test)
+    correct_playlists(playlists=playlists, test=test, date_sorting=date_sorting)
     cache.write_cache()
     logger.write()
     logger.write()
