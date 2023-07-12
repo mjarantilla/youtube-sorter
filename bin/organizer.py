@@ -520,7 +520,7 @@ def sequencer(starting_playlist, ending_playlist, removals, date_sorting=False, 
         if not test:
             if command['action']:
                 vid_obj = Video(video['vid_id'], cache=cache, client=client)
-                if command['action'] == "update":
+                if command['action'] == "update" and not date_sorting:
                     if not backlog and not queue:
                         logger.write("Executing command: %s" % command['action'], tier=log_tier)
                         kwargs = {
@@ -1066,13 +1066,13 @@ def correct(corrections, test=False):
     return False
 
 
-def correct_playlists(playlists, test=False):
+def correct_playlists(playlists, date_sorting=False, test=False):
     corrections = json.load(open(os.path.join(config.variables['CACHE_DIR'], 'corrections.json')))
     for playlist in playlists:
         playlist_name = playlist['name']
         if playlist_name in corrections:
             playlist_data = corrections[playlist_name]
-            correct_playlist(playlist_name, playlist_data, test)
+            correct_playlist(playlist_name, playlist_data, date_sorting=date_sorting, test=test)
 
 
 def correct_playlist(playlist_name, playlist_data, date_sorting=False, test=False):
