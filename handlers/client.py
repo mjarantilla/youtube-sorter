@@ -126,8 +126,9 @@ class YoutubeClientHandler:
 
     def playlist_items_insert(self, properties, **kwargs):
         # See full sample for function
+        logger.write(properties)
         resource = self.build_resource(properties)
-
+        logger.write(resource)
         # See full sample for function
         kwargs = self.remove_empty_kwargs(**kwargs)
         request = self.client.playlistItems().insert(body=resource, **kwargs)
