@@ -81,6 +81,7 @@ class Video:
         if position:
             params['snippet.position'] = position
         if not test:
+            logger.write(params)
             playlist_item = self.client.playlist_items_insert(params, part='snippet')
             self.data['playlist_membership'][playlist_id] = {
                 'playlist_item_id': playlist_item['id'],
