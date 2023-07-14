@@ -63,13 +63,15 @@ class YoutubeClientHandler:
 
         return youtube
 
-    def execute(self, request_object):
+    def execute(self, request_object, kwargs=None):
         # logger.write("Querying Youtube: %s %s" % (request_object.method, request_object.methodId))
         try:
             response = request_object.execute()
         except googleapiclient.errors.HttpError as err:
             content = err.content
             response = err.resp
+            logger.write("Request:")
+            logger.write(kwargs)
             logger.write("Response:")
             logger.write(response)
             logger.write()
@@ -128,7 +130,7 @@ class YoutubeClientHandler:
         # See full sample for function
         kwargs = self.remove_empty_kwargs(**kwargs)
         request = self.client.playlistItems().insert(body=resource, **kwargs)
-        response = self.execute(request)
+        response = self.execute(request, kwargs)
 
         return response
 
@@ -139,7 +141,7 @@ class YoutubeClientHandler:
         # See full sample for function
         kwargs = self.remove_empty_kwargs(**kwargs)
         request = self.client.playlistItems().update(body=resource, **kwargs)
-        response = self.execute(request)
+        response = self.execute(request, kwargs)
 
         return response
 
