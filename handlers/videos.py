@@ -65,7 +65,7 @@ class Video:
 
         return seconds
 
-    def add_to_playlist(self, playlist_id, position=0, test=False):
+    def add_to_playlist(self, playlist_id, position=None, test=False):
         """
         Adds the video to the specified playlist at the specified position.
 
@@ -77,8 +77,9 @@ class Video:
             'snippet.playlistId': playlist_id,
             'snippet.resourceId.kind': 'youtube#video',
             'snippet.resourceId.videoId': self.id,
-            'snippet.position': position,
         }
+        if position:
+            params['snippet.position'] = position
         if not test:
             playlist_item = self.client.playlist_items_insert(params, part='snippet')
             self.data['playlist_membership'][playlist_id] = {
