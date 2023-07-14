@@ -539,7 +539,7 @@ def sequencer(starting_playlist, ending_playlist, removals, date_sorting=False, 
                         'test': test
                     }
                     if not date_sorting:
-                        kwargs['position'] = command['to']['position'],
+                        kwargs['position'] = command['to']['position']
                         logger.write("Importing into position %s: %s" % (command['to']['position'], vid_obj.title), tier=1)
                     else:
                         logger.write("Importing: %s" % (vid_obj.title), tier=1)
