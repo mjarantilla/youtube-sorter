@@ -169,7 +169,7 @@ class Video:
 
         logger.write("%i duplicate(s) removed" % removed)
 
-    def remove_from_playlist(self, playlist_id=None, playlist_item_id=None, already_checked=True, test=False):
+    def remove_from_playlist(self, playlist_id=None, playlist_item_id=None, already_checked=True, yt_short=False, test=False):
         """
         Removes the video from the specified playlist
 
@@ -208,7 +208,10 @@ class Video:
                         response = self.client.execute(request)
                         self.cache.remove_playlist_membership(self.id, playlist_id)
 
-                    logger.write("Removed from playlist: %s" % self.title if self.title else self.id)
+                    if not yt_short:
+                        logger.write("Removed from playlist: %s" % self.title if self.title else self.id)
+                    else:
+                        logger.write("Removed short from playlist: %s" % self.title if self.title else self.id)
 
                     return response
         else:
