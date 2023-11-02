@@ -6,7 +6,6 @@ ranks = RanksHandler()
 
 def main(test=False):
     remove_shorts(category="primary", test=test)
-    remove_shorts(category="f1", test=test, date_sorting=True)
 
 def remove_shorts(category='primary', test=False):
     playlist_map = {
@@ -19,4 +18,5 @@ def remove_shorts(category='primary', test=False):
         fetched_playlist = fetched_playlists[fetched_playlist_name]
         if fetched_playlist_name == 'queue':
             organizer.remove_shorts(fetched_playlist, test=test)
+
 main()
